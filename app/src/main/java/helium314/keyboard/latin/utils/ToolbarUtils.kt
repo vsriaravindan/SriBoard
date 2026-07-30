@@ -35,8 +35,8 @@ fun createToolbarKey(context: Context, key: ToolbarKey): ImageButton {
     if (icon != null) {
         button.setImageDrawable(icon)
     } else {
-        // Fallback: show first 2 chars of key name as text
-        button.text = when (key) {
+        // Fallback: create a simple text bitmap for unrecognized keys
+        val label = when (key) {
             AI_FIX -> "Fx"
             AI_TRANSLATE_TAMIL -> "Ta"
             AI_CUSTOM_1 -> "C1"
@@ -46,8 +46,17 @@ fun createToolbarKey(context: Context, key: ToolbarKey): ImageButton {
             AI_CUSTOM_5 -> "C5"
             else -> key.name.take(2)
         }
-        button.setTextColor(android.graphics.Color.parseColor("#8AB4F8"))
-        button.textSize = 14f
+        val size = (24 * context.resources.displayMetrics.density).toInt()
+        val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bmp)
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        paint.color = android.graphics.Color.parseColor("#8AB4F8")
+        paint.textSize = 11 * context.resources.displayMetrics.density
+        paint.textAlign = android.graphics.Paint.Align.CENTER
+        val x = (size / 2).toFloat()
+        val y = (size / 2 + paint.textSize / 3).toFloat()
+        canvas.drawText(label, x, y, paint)
+        button.setImageBitmap(bmp)
     }
     return button
 }

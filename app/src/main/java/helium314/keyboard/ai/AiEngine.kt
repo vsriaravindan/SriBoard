@@ -65,6 +65,9 @@ class AiEngine(private val context: Context) {
         }
 
         fun isAiKeyCode(keyCode: Int): Boolean = keyCode in KeyCode.AI_FIX..KeyCode.AI_CUSTOM_5
+
+        private const val CONFIRM_HAPTIC = 1
+        private const val REJECT_HAPTIC = 2
     }
 
     /**
@@ -228,10 +231,5 @@ class AiEngine(private val context: Context) {
                 }
             } catch (_: Exception) {}
         }
-    }
-
-    companion object {
-        private const val CONFIRM_HAPTIC = 1
-        private const val REJECT_HAPTIC = 2
     }
 }
