@@ -1,10 +1,11 @@
-# HeliBoard
-HeliBoard is a privacy-conscious and customizable open-source keyboard, based on AOSP / OpenBoard.
-Does not use internet permission, and thus is 100% offline.
+# Sriboard
+Sriboard is a **privacy-conscious, AI-enhanced keyboard** forked from HeliBoard.
+Built on AOSP / OpenBoard with integrated AI text correction and translation powered by your own API keys.
+
+**⚠️ Privacy First:** All AI processing uses *your* API keys. The app has NO internet permission by default — AI features only connect when you trigger them. No data leaves your device except what you explicitly send to your chosen AI provider.
 
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/helium314.keyboard/)
-[<img src="https://user-images.githubusercontent.com/663460/26973090-f8fdc986-4d14-11e7-995a-e7c5e79ed925.png" alt="Get APK from GitHub" height="80">](https://github.com/HeliBorg/HeliBoard/releases/latest)
-[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/helium314.keyboard)
+[<img src="https://user-images.githubusercontent.com/663460/26973090-f8fdc986-4d14-11e7-995a-e7c5e79ed925.png" alt="Get APK from GitHub" height="80">](https://github.com/vsriaravindan/SriBoard/releases/latest)
 
 ## Table of Contents
 

@@ -139,6 +139,15 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     public static final String PREF_GESTURE_SPACE_AWARE = "gesture_space_aware";
     public static final String PREF_GESTURE_FAST_TYPING_COOLDOWN = "gesture_fast_typing_cooldown";
     public static final String PREF_GESTURE_TRAIL_FADEOUT_DURATION = "gesture_trail_fadeout_duration";
+
+    // Sriboard AI feature pref keys (all prefixed with ai_ for backup compatibility)
+    public static final String PREF_AI_ENABLED = "ai_enabled";
+    public static final String PREF_AI_PROVIDER = "ai_provider";
+    public static final String PREF_AI_API_KEY = "ai_api_key";
+    public static final String PREF_AI_MODEL = "ai_model";
+    public static final String PREF_AI_ENDPOINT = "ai_endpoint";
+    public static final String PREF_AI_PRESETS_JSON = "ai_presets_json";
+    public static final String PREF_AI_ENABLED_PRESETS = "ai_enabled_presets";
     public static final String PREF_SHOW_SETUP_WIZARD_ICON = "show_setup_wizard_icon";
     public static final String PREF_USE_CONTACTS = "use_contacts";
     public static final String PREF_USE_APPS = "use_apps";

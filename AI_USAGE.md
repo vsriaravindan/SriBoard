@@ -1,14 +1,40 @@
-# AI / LLM Usage
+# AI Features in Sriboard
 
-AI / LLM usage for code and communication is not completely prohibited, but please don't.
-There are 2 main reasons:
-* **Time**: Generating large volumes of content with LLMs is simple, but reading and trying to understand it takes time.
-Generated text usually is needlessly verbose, and no one can tell which parts you actually care about and what was generated in addition.
-* **Respect**: When someone volunteers to work on your request, they want to deal with an actual human who reacts to feedback.
+Sriboard includes AI-powered text correction and translation features that work **entirely inside the keyboard** — no Accessibility Service, no Developer Options needed.
 
-Effectively LLMs increase the maintainer workload when there already is too much to do, and it's no fun at all to deal with. _No fun_ may sound irrelevant, but in fact can be very destructive for a hobby project such as HeliBoard.
+## How It Works
 
-1. Communication must happen between humans. You may use AI for translations or similar, but not for generating comments.
-2. Contributions must be made with human interaction, i.e. AI generated PRs and issues are prohibited.
-3. Understand your contributions. AI assistance is acceptable and must be disclosed, but you still should be able to understand and explain the code yourself.
-4. Your contributions need to be compatible with the [project's license](LICENSE). This effectively means an LLM can only be trained on code compatible with GPL3.
+1. You enable AI Features in Settings → AI
+2. Configure your API key (Google AI Gemini, Grok, DeepSeek, or any OpenAI-compatible provider)
+3. AI toolbar keys appear in your keyboard toolbar (configurable in Settings → Toolbar)
+4. Type text, tap an AI toolbar button → text is processed and replaced inline
+
+## Supported Providers
+
+| Provider | API Key Format | Default Model |
+|---|---|---|
+| Google AI (Gemini) | `AIza...` | gemini-2.0-flash |
+| Grok (xAI) | `xai-...` | grok-2 |
+| DeepSeek Flash | `sk-...` | deepseek-chat |
+| DeepSeek Pro | `sk-...` | deepseek-reasoner |
+| OpenAI Compatible | `sk-...` | gpt-4o-mini |
+
+## Presets
+
+| Preset | What It Does |
+|---|---|
+| **Fix** | Corrects English grammar/spelling errors |
+| **Translate to Tamil** | Translates text to Tamil |
+| **Custom 1-5** | User-defined prompts |
+
+## Security
+
+- **API keys are stored only** in Android's device-protected storage (credential-encrypted SharedPreferences)
+- **Keys are sent ONLY** to the configured API endpoint in the HTTPS request
+- **No telemetry**, no analytics, no data collection
+- **No internet permission** in the manifest — network calls happen only when you trigger an AI toolbar key
+- **Undo support** — tap the AI key again to restore your original text
+
+## Backup Compatibility
+
+Sriboard's backup system is identical to HeliBoard's. AI settings (prefixed with `ai_`) are automatically included in backups. A HeliBoard backup can be restored into Sriboard (AI settings simply default), and vice versa.

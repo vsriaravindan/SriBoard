@@ -31,7 +31,24 @@ fun createToolbarKey(context: Context, key: ToolbarKey): ImageButton {
     button.tag = key
     button.contentDescription = key.name.lowercase().getStringResourceOrName("", context)
     setToolbarButtonActivatedState(button)
-    button.setImageDrawable(KeyboardIconsSet.instance.getNewDrawable(key.name, context))
+    val icon = KeyboardIconsSet.instance.getNewDrawable(key.name, context)
+    if (icon != null) {
+        button.setImageDrawable(icon)
+    } else {
+        // Fallback: show first 2 chars of key name as text
+        button.text = when (key) {
+            AI_FIX -> "Fx"
+            AI_TRANSLATE_TAMIL -> "Ta"
+            AI_CUSTOM_1 -> "C1"
+            AI_CUSTOM_2 -> "C2"
+            AI_CUSTOM_3 -> "C3"
+            AI_CUSTOM_4 -> "C4"
+            AI_CUSTOM_5 -> "C5"
+            else -> key.name.take(2)
+        }
+        button.setTextColor(android.graphics.Color.parseColor("#8AB4F8"))
+        button.textSize = 14f
+    }
     return button
 }
 
@@ -95,6 +112,14 @@ fun getCodeForToolbarKey(key: ToolbarKey) = Settings.getInstance().getCustomTool
     SPLIT -> KeyCode.SPLIT_LAYOUT
     FLOATING -> KeyCode.TOGGLE_FLOATING_WINDOW
     BACKGROUND_GATHERING -> KeyCode.BACKGROUND_GATHERING
+    // Sriboard AI toolbar keys
+    AI_FIX -> KeyCode.AI_FIX
+    AI_TRANSLATE_TAMIL -> KeyCode.AI_TRANSLATE_TAMIL
+    AI_CUSTOM_1 -> KeyCode.AI_CUSTOM_1
+    AI_CUSTOM_2 -> KeyCode.AI_CUSTOM_2
+    AI_CUSTOM_3 -> KeyCode.AI_CUSTOM_3
+    AI_CUSTOM_4 -> KeyCode.AI_CUSTOM_4
+    AI_CUSTOM_5 -> KeyCode.AI_CUSTOM_5
 }
 
 fun getCodeForToolbarKeyLongClick(key: ToolbarKey) = Settings.getInstance().getCustomToolbarLongpressCode(key) ?: when (key) {
@@ -121,7 +146,9 @@ fun getCodeForToolbarKeyLongClick(key: ToolbarKey) = Settings.getInstance().getC
 enum class ToolbarKey {
     VOICE, CLIPBOARD, NUMPAD, DPAD, UNDO, REDO, SETTINGS, SELECT_ALL, SELECT_WORD, COPY, CUT, PASTE, ONE_HANDED, FLOATING, SPLIT,
     INCOGNITO, AUTOCORRECT, CLEAR_CLIPBOARD, CLOSE_HISTORY, EMOJI, LEFT, RIGHT, UP, DOWN, WORD_LEFT, WORD_RIGHT,
-    PAGE_UP, PAGE_DOWN, FULL_LEFT, FULL_RIGHT, PAGE_START, PAGE_END, BACKGROUND_GATHERING
+    PAGE_UP, PAGE_DOWN, FULL_LEFT, FULL_RIGHT, PAGE_START, PAGE_END, BACKGROUND_GATHERING,
+    // Sriboard AI toolbar keys
+    AI_FIX, AI_TRANSLATE_TAMIL, AI_CUSTOM_1, AI_CUSTOM_2, AI_CUSTOM_3, AI_CUSTOM_4, AI_CUSTOM_5
 }
 
 enum class ToolbarMode {
@@ -131,7 +158,7 @@ enum class ToolbarMode {
 val toolbarKeyStrings = entries.associateWithTo(EnumMap(ToolbarKey::class.java)) { it.toString().lowercase(Locale.US) }
 
 val defaultToolbarPref by lazy {
-    val default = listOf(SETTINGS, VOICE, CLIPBOARD, UNDO, REDO, SELECT_WORD, COPY, PASTE, LEFT, RIGHT)
+    val default = listOf(SETTINGS, VOICE, CLIPBOARD, UNDO, REDO, SELECT_WORD, COPY, PASTE, LEFT, RIGHT, AI_FIX)
     val others = entries.filterNot { it in default || it == CLOSE_HISTORY }
     default.joinToString(Separators.ENTRY) { it.name + Separators.KV + true } + Separators.ENTRY +
             others.joinToString(Separators.ENTRY) { it.name + Separators.KV + false }

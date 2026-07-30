@@ -9,11 +9,11 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"
     tools:ignore="MissingTranslation">
     <!-- Name of Android spell checker service. The app name should not be translated. -->
-    <string name="spell_checker_service_name">HeliBoard Spell Checker</string>
+    <string name="spell_checker_service_name">Sriboard Spell Checker</string>
     <!-- Title for IME settings screen. The app name should not be translated. -->
-    <string name="ime_settings">HeliBoard Settings</string>
+    <string name="ime_settings">Sriboard Settings</string>
     <!-- Title for the spell checking service settings screen. The app name should not be translated. -->
-    <string name="android_spell_checker_settings">HeliBoard Spell Checker Settings</string>
+    <string name="android_spell_checker_settings">Sriboard Spell Checker Settings</string>
     <!-- Option to provide vibrate/haptic feedback on keypress -->
     <string name="vibrate_on_keypress">Vibrate on keypress</string>
     <!-- Option to provide vibrate/haptic feedback on keypress even in do not disturb mode -->
@@ -786,6 +786,28 @@ New dictionary:
     <string name="get_layouts_message">"You can find and share layouts in the %s."</string>
     <!-- Text to be used in get_colors_message and get_layouts_message -->
     <string name="discussion_section_link">"discussion section"</string>
+    <string name="settings_screen_ai">AI</string>
+    <string name="ai_settings_summary">Configure AI fix and presets</string>
+    <string name="ai_provider">AI Provider</string>
+    <string name="ai_api_key">API Key</string>
+    <string name="ai_model">Model</string>
+    <string name="ai_custom_endpoint">Custom Endpoint</string>
+    <string name="ai_fix_prompt">Fix English grammar errors. Return ONLY corrected text.</string>
+    <string name="ai_translate_tamil_prompt">Translate the following text to Tamil. Return ONLY the translated text.</string>
+    <string name="ai_custom_prompt">Custom Prompt</string>
+    <string name="ai_presets">Presets</string>
+    <string name="ai_preset_fix">Fix</string>
+    <string name="ai_preset_translate_tamil">Translate to Tamil</string>
+    <string name="ai_preset_custom">Custom %d</string>
+    <string name="ai_prompt_hint">Enter your AI prompt here. Use {{text}} as placeholder for the input text.</string>
+    <string name="ai_key_not_configured">API key not configured. Go to AI Settings.</string>
+    <string name="ai_processing">AI processing…</string>
+    <string name="ai_error">AI error: %s</string>
+    <string name="ai_no_connection">No network connection</string>
+    <string name="ai_request_timed_out">AI request timed out</string>
+    <string name="ai_fix_nothing">No text to fix</string>
+    <string name="ai_fix_done">Text corrected</string>
+    <string name="ai_presets_reorder_hint">Long press and drag to reorder</string>
     <!-- Settings screen title for about -->
     <string name="settings_screen_about">About</string>
     <!-- version for about screen -->
