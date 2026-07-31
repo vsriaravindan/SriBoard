@@ -57,17 +57,20 @@ class AiProgressDrawable(
     }
 
     /**
-     * @param value null = indeterminate spinner, 0..100 = determinate percentage
+     * @param value null or 0/100 = keep the spinner (fast responses deliver one chunk,
+     *              so 0/100 carries no visual information); 1..99 = real intermediate
+     *              progress, drawn as a ring + percentage.
      */
     fun update(value: Int?) {
-        if (value == null) {
+        val determinate = value != null && value in 1..99
+        if (!determinate) {
             percent = null
             if (!animating) {
                 animating = true
                 handler.post(animationRunnable)
             }
         } else {
-            percent = value.coerceIn(0, 100)
+            percent = value
             if (animating) {
                 animating = false
                 handler.removeCallbacks(animationRunnable)
@@ -86,8 +89,11 @@ class AiProgressDrawable(
         val w = bounds.width().toFloat()
         val h = bounds.height().toFloat()
         if (w <= 0 || h <= 0) return
-        val stroke = arcPaint.strokeWidth
-        val inset = stroke / 2f + dp(1f)
+        val size = minOf(w, h)
+        val stroke = size * 0.10f
+        backgroundPaint.strokeWidth = stroke
+        arcPaint.strokeWidth = stroke
+        val inset = stroke / 2f + size * 0.02f
         arc.set(inset, inset, w - inset, h - inset)
 
         canvas.drawArc(arc, 0f, 360f, false, backgroundPaint)
@@ -95,11 +101,12 @@ class AiProgressDrawable(
         if (percent != null) {
             val sweep = 360f * percent!! / 100f
             canvas.drawArc(arc, -90f, sweep, false, arcPaint)
+            textPaint.textSize = size * 0.34f
             val text = "$percent%"
             val y = h / 2f - (textPaint.descent() + textPaint.ascent()) / 2f
             canvas.drawText(text, w / 2f, y, textPaint)
         } else {
-            canvas.drawArc(arc, indeterminateAngle, 70f, false, arcPaint)
+            canvas.drawArc(arc, indeterminateAngle, 80f, false, arcPaint)
         }
     }
 

@@ -89,6 +89,7 @@ object AiToolbarButtonRegistry {
             progressDrawables.clear()
             buttons.forEach { (key, button) ->
                 try {
+                    button.scaleType = ImageView.ScaleType.CENTER
                     button.setImageDrawable(KeyboardIconsSet.instance.getNewDrawable(key.name, button.context))
                 } catch (_: Exception) {
                     // keep whatever is set — never crash over an icon
@@ -98,6 +99,8 @@ object AiToolbarButtonRegistry {
         }
         buttons.forEach { (key, button) ->
             val drawable = progressDrawables.getOrPut(key) {
+                // fill the whole key with the progress ring so it is impossible to miss
+                button.scaleType = ImageView.ScaleType.FIT_XY
                 AiProgressDrawable(density = button.resources.displayMetrics.density).also { d -> button.setImageDrawable(d) }
             }
             drawable.update(percent)

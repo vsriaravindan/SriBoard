@@ -110,12 +110,9 @@ class AiEngine(private val context: Context) {
 
         if (!isProcessing.compareAndSet(false, true)) return true
 
-        // Same key pressed again with a previous result → undo toggle
-        if (lastKeyCode == keyCode && lastOriginalText != null) {
-            handleUndo(connection, keyCode)
-            isProcessing.set(false)
-            return true
-        }
+        // Note: no toggle-undo on repeated taps any more (v1.6) — every tap starts a
+        // fresh request (2nd tap while in-flight cancels). Use the toolbar UNDO key
+        // to revert, like any other edit.
 
         // Read text before cursor
         val textBeforeCursor = connection.getTextBeforeCursor(4000, 0)?.toString() ?: ""
@@ -223,7 +220,9 @@ class AiEngine(private val context: Context) {
     }
 
     /**
-     * Undo the last AI replacement by restoring original text
+     * Undo the last AI replacement by restoring original text.
+     * Note: no longer wired to the AI key (v1.6) — use the toolbar UNDO key.
+     * Kept for potential future use.
      */
     private fun handleUndo(connection: InputConnection, keyCode: Int) {
         val original = lastOriginalText ?: return
