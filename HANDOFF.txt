@@ -211,6 +211,12 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
   then commits result. Text AFTER cursor is preserved but the cursor jumps to
   end of committed text — minor UX edge case.
 - Undo is single-level, toggles original<->result, per text field.
+  [CHANGED v1.6: toggle-undo on 2nd tap REMOVED — every tap processes; the
+   toolbar's native UNDO key reverts AI edits like any other edit.]
+- Percentage is byte-download progress (Content-Length), so short responses jump
+  0→100 quickly; true incremental % needs SSE streaming (bigger change).
+  [v1.6: spinner now runs the whole request; % shown only for 1..99]
+- Spinner draws at FULL KEY SIZE (FIT_XY while processing, CENTER restored after).
 - No per-provider "test connection" button in settings yet.      [DONE v1.5]
 - Password fields are NOT explicitly blocked — InputConnection still works,
   but consider checking EditorInfo inputType for TYPE_TEXT_VARIATION_PASSWORD.
@@ -235,6 +241,9 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
  v1.5 aa11b76  progress indicator +% on AI keys, seeded presets (3 auto-filled),
                 auto-enable ALL AI toolbar keys on save, bundled Google gesture
                 lib (arm64), password-field block, cancel on 2nd tap, test button
+ v1.6 156c360  PROGRESS FIX: ring fills whole key (FIT_XY), spinner runs entire
+                request (0/100 keep spinning; 1..99 show %), removed 2nd-tap
+                toggle-undo (every tap processes; toolbar UNDO key reverts)
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)
