@@ -1,0 +1,12 @@
+<!--
+    Sriboard AI Custom icon (Material auto_fix_normal / sparkle)
+    SPDX-License-Identifier: Apache-2.0
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:height="24dp"
+    android:width="24dp"
+    android:viewportHeight="24"
+    android:viewportWidth="24" >
+    <path android:fillColor="#FFF"
+        android:pathData="M22,2l-2.5,1.4L17,2l1.4,2.5L17,7l2.5,-1.4L22,7l-1.4,-2.5L22,2zM12.88,11.29l-7.17,7.17c-0.39,0.39 -0.39,1.02 0,1.41 0.39,0.39 1.02,0.39 1.41,0l7.17,-7.17 -1.41,-1.41zM19.83,8.51l-5.34,-5.34c-0.39,-0.39 -1.02,-0.39 -1.41,0l-1.42,1.42 6.75,6.75 1.42,-1.42c0.39,-0.39 0.39,-1.02 0,-1.41zM4.95,19.05c-0.39,-0.39 -1.02,-0.39 -1.41,0 -0.39,0.39 -0.39,1.02 0,1.41 0.39,0.39 1.02,0.39 1.41,0s0.39,-1.02 0,-1.41zM5.5,15.5L2,22l6.5,-3.5 -3,-3z"/>
+</vector>

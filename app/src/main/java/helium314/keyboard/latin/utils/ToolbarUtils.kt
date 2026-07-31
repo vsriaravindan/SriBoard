@@ -31,32 +31,36 @@ fun createToolbarKey(context: Context, key: ToolbarKey): ImageButton {
     button.tag = key
     button.contentDescription = key.name.lowercase().getStringResourceOrName("", context)
     setToolbarButtonActivatedState(button)
-    val icon = KeyboardIconsSet.instance.getNewDrawable(key.name, context)
-    if (icon != null) {
-        button.setImageDrawable(icon)
-    } else {
-        // Fallback: create a simple text bitmap for unrecognized keys
-        val label = when (key) {
-            AI_FIX -> "Fx"
-            AI_TRANSLATE_TAMIL -> "Ta"
-            AI_CUSTOM_1 -> "C1"
-            AI_CUSTOM_2 -> "C2"
-            AI_CUSTOM_3 -> "C3"
-            AI_CUSTOM_4 -> "C4"
-            AI_CUSTOM_5 -> "C5"
-            else -> key.name.take(2)
+    try {
+        val icon = KeyboardIconsSet.instance.getNewDrawable(key.name, context)
+        if (icon != null) {
+            button.setImageDrawable(icon)
+        } else {
+            // Fallback: create a simple text bitmap for unrecognized keys
+            val label = when (key) {
+                AI_FIX -> "Fx"
+                AI_TRANSLATE_TAMIL -> "Ta"
+                AI_CUSTOM_1 -> "C1"
+                AI_CUSTOM_2 -> "C2"
+                AI_CUSTOM_3 -> "C3"
+                AI_CUSTOM_4 -> "C4"
+                AI_CUSTOM_5 -> "C5"
+                else -> key.name.take(2)
+            }
+            val size = (24 * context.resources.displayMetrics.density).toInt().coerceAtLeast(1)
+            val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bmp)
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+            paint.color = android.graphics.Color.parseColor("#8AB4F8")
+            paint.textSize = 11 * context.resources.displayMetrics.density
+            paint.textAlign = android.graphics.Paint.Align.CENTER
+            val x = (size / 2).toFloat()
+            val y = (size / 2 + paint.textSize / 3).toFloat()
+            canvas.drawText(label, x, y, paint)
+            button.setImageBitmap(bmp)
         }
-        val size = (24 * context.resources.displayMetrics.density).toInt()
-        val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(bmp)
-        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-        paint.color = android.graphics.Color.parseColor("#8AB4F8")
-        paint.textSize = 11 * context.resources.displayMetrics.density
-        paint.textAlign = android.graphics.Paint.Align.CENTER
-        val x = (size / 2).toFloat()
-        val y = (size / 2 + paint.textSize / 3).toFloat()
-        canvas.drawText(label, x, y, paint)
-        button.setImageBitmap(bmp)
+    } catch (_: Exception) {
+        // never crash the keyboard because of a missing icon
     }
     return button
 }
