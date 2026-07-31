@@ -10,6 +10,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.core.content.edit
 import androidx.core.view.forEach
+import helium314.keyboard.ai.AiPresetManager
 import helium314.keyboard.ai.AiProgressDrawable
 import helium314.keyboard.event.HapticEvent
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
@@ -324,6 +325,37 @@ fun enableAllAiToolbarKeys(prefs: SharedPreferences) {
 fun isAiConfigured(prefs: SharedPreferences): Boolean =
     prefs.getBoolean(Settings.PREF_AI_ENABLED, false)
         && !(prefs.getString(Settings.PREF_AI_API_KEY, "") ?: "").isBlank()
+
+/**
+ * Sriboard: when a preset is toggled ON in AI Settings, enable its toolbar key too,
+ * so the user's preset setup is immediately reflected in the toolbar.
+ */
+fun syncPresetToolbarKeys(prefs: SharedPreferences, presets: List<AiPresetManager.SerializablePreset>) {
+    upgradeToolbarPref(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref)
+    for (preset in presets) {
+        if (!preset.enabled) continue
+        val key = presetTypeToToolbarKey(preset.type) ?: continue
+        setToolbarKeyEnabled(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref, key, true)
+    }
+}
+
+private fun presetTypeToToolbarKey(typeName: String): ToolbarKey? = when (typeName) {
+    "FIX" -> ToolbarKey.AI_FIX
+    "TRANSLATE_TAMIL" -> ToolbarKey.AI_TRANSLATE_TAMIL
+    "CUSTOM_1" -> ToolbarKey.AI_CUSTOM_1
+    "CUSTOM_2" -> ToolbarKey.AI_CUSTOM_2
+    "CUSTOM_3" -> ToolbarKey.AI_CUSTOM_3
+    "CUSTOM_4" -> ToolbarKey.AI_CUSTOM_4
+    "CUSTOM_5" -> ToolbarKey.AI_CUSTOM_5
+    else -> null
+}
+
+/**
+ * Sriboard: the AI menu key (Quick Panel) is only shown while AI is turned on.
+ */
+fun setAiMenuKeyEnabled(prefs: SharedPreferences, enabled: Boolean) {
+    setToolbarKeyEnabled(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref, ToolbarKey.AI_MENU, enabled)
+}
 
 private fun setToolbarKeyEnabled(prefs: SharedPreferences, pref: String, default: String, key: ToolbarKey, enabled: Boolean) {
     val string = prefs.getString(pref, default)!!

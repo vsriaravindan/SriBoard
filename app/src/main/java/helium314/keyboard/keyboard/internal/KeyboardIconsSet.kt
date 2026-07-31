@@ -159,8 +159,11 @@ class KeyboardIconsSet private constructor() {
                     ToolbarKey.BACKGROUND_GATHERING -> R.drawable.ic_settings_gesture
                     ToolbarKey.AI_FIX -> R.drawable.ic_ai_fix
                     ToolbarKey.AI_TRANSLATE_TAMIL -> R.drawable.ic_ai_translate
-                    ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2, ToolbarKey.AI_CUSTOM_3,
-                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5, ToolbarKey.AI_MENU -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2 -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_3 -> R.drawable.ic_ai_rewrite
+                    ToolbarKey.AI_CUSTOM_4 -> R.drawable.ic_ai_shorten
+                    ToolbarKey.AI_CUSTOM_5 -> R.drawable.ic_ai_translate_en
+                    ToolbarKey.AI_MENU -> R.drawable.ic_ai_menu
                 })
             }
         } }
@@ -227,8 +230,11 @@ class KeyboardIconsSet private constructor() {
                     ToolbarKey.BACKGROUND_GATHERING -> R.drawable.ic_settings_gesture
                     ToolbarKey.AI_FIX -> R.drawable.ic_ai_fix
                     ToolbarKey.AI_TRANSLATE_TAMIL -> R.drawable.ic_ai_translate
-                    ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2, ToolbarKey.AI_CUSTOM_3,
-                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5, ToolbarKey.AI_MENU -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2 -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_3 -> R.drawable.ic_ai_rewrite
+                    ToolbarKey.AI_CUSTOM_4 -> R.drawable.ic_ai_shorten
+                    ToolbarKey.AI_CUSTOM_5 -> R.drawable.ic_ai_translate_en
+                    ToolbarKey.AI_MENU -> R.drawable.ic_ai_menu
                 })
             }
         } }
@@ -295,8 +301,11 @@ class KeyboardIconsSet private constructor() {
                     ToolbarKey.BACKGROUND_GATHERING -> R.drawable.ic_settings_gesture
                     ToolbarKey.AI_FIX -> R.drawable.ic_ai_fix
                     ToolbarKey.AI_TRANSLATE_TAMIL -> R.drawable.ic_ai_translate
-                    ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2, ToolbarKey.AI_CUSTOM_3,
-                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5, ToolbarKey.AI_MENU -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2 -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_3 -> R.drawable.ic_ai_rewrite
+                    ToolbarKey.AI_CUSTOM_4 -> R.drawable.ic_ai_shorten
+                    ToolbarKey.AI_CUSTOM_5 -> R.drawable.ic_ai_translate_en
+                    ToolbarKey.AI_MENU -> R.drawable.ic_ai_menu
                 })
             }
         } }

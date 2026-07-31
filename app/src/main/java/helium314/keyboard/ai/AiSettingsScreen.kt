@@ -21,6 +21,8 @@ import android.widget.Toast
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.enableAllAiToolbarKeys
+import helium314.keyboard.latin.utils.setAiMenuKeyEnabled
+import helium314.keyboard.latin.utils.syncPresetToolbarKeys
 import helium314.keyboard.latin.utils.prefs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,13 +61,16 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
             .apply()
         AiPresetManager.savePresets(context, presets)
         // Sriboard: when AI is turned on with an API key, enable ALL AI toolbar keys
-        // automatically — no manual Settings → Toolbar trip needed.
+        // automatically — no manual Settings → Toolbar trip needed. Toggling a preset
+        // on also enables its toolbar key. The AI menu key follows the AI master switch.
         if (enabled.value && apiKey.value.trim().isNotBlank()) {
             enableAllAiToolbarKeys(context.prefs())
             Toast.makeText(context, "AI settings saved — all AI toolbar keys enabled", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "AI settings saved", Toast.LENGTH_SHORT).show()
         }
+        syncPresetToolbarKeys(context.prefs(), presets)
+        setAiMenuKeyEnabled(context.prefs(), enabled.value)
     }
 
     Scaffold(

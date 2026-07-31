@@ -16,6 +16,7 @@ import helium314.keyboard.latin.utils.upgradeToolbarPrefs
 import helium314.keyboard.latin.utils.enableAiToolbarKeys
 import helium314.keyboard.latin.utils.enableAllAiToolbarKeys
 import helium314.keyboard.latin.utils.isAiConfigured
+import helium314.keyboard.latin.utils.setAiMenuKeyEnabled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,10 +46,12 @@ class App : Application() {
         checkVersionUpgrade(this)
         // Sriboard: always ensure AI toolbar keys exist (release too), so HeliBoard
         // upgraders get the AI Fix key in their toolbar. If AI is configured (on + key),
-        // enable ALL AI keys so every feature is immediately accessible.
+        // enable ALL AI keys so every feature is immediately accessible. The AI menu
+        // key (Quick Panel) follows the AI master switch.
         enableAiToolbarKeys(prefs())
         if (isAiConfigured(prefs()))
             enableAllAiToolbarKeys(prefs())
+        setAiMenuKeyEnabled(prefs(), prefs().getBoolean(Settings.PREF_AI_ENABLED, false))
         if (BuildConfig.DEBUG) // do this on every debug apk start because we may work on adding a new toolbar key
             upgradeToolbarPrefs(prefs())
         transferOldPinnedClips(this) // todo: remove in a few months, maybe end 2026

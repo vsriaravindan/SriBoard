@@ -1245,7 +1245,12 @@ public class LatinIME extends InputMethodService implements
             return;
         }
         final int stripHeight = mKeyboardSwitcher.isShowingStripContainer() ? mKeyboardSwitcher.getStripContainer().getHeight() : 0;
-        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight;
+        // Sriboard: the AI Quick Panel sits between strip and keyboard — include its
+        // height so the IME's touchable region covers it (otherwise taps pass through
+        // to the app behind and move the cursor instead of hitting the chips).
+        final int panelHeight = (mAiQuickPanel != null && mAiQuickPanel.getVisibility() == View.VISIBLE)
+                ? mAiQuickPanel.getHeight() : 0;
+        int visibleTopY = inputHeight - visibleKeyboardView.getHeight() - stripHeight - panelHeight;
         if (Settings.getValues().mIsFloatingKeyboard)
             visibleTopY = getResources().getDisplayMetrics().heightPixels;
 
