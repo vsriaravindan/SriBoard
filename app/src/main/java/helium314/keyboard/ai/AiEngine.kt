@@ -10,6 +10,7 @@ import android.os.VibratorManager
 import android.view.inputmethod.InputConnection
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.latin.utils.prefs
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -81,7 +82,7 @@ class AiEngine(private val context: Context) {
         val presetType = keyCodeToPresetType(keyCode) ?: return true
 
         // Check if AI is enabled
-        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefs = context.prefs()
         if (!prefs.getBoolean(Settings.PREF_AI_ENABLED, false)) {
             showToast("AI features are disabled. Enable in AI Settings.")
             performHaptic(REJECT_HAPTIC)

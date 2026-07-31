@@ -2,9 +2,6 @@
 package helium314.keyboard.ai
 
 import helium314.keyboard.ai.AiPrefs.Provider
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -20,7 +17,6 @@ import java.net.URL
  */
 object AiApiClient {
 
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private const val TIMEOUT_MS = 90_000
 
     data class AiResult(

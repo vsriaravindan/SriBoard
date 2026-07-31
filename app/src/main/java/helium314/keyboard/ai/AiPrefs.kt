@@ -3,6 +3,7 @@ package helium314.keyboard.ai
 
 import android.content.Context
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.latin.utils.prefs
 
 object AiPrefs {
     // Provider types
@@ -39,26 +40,33 @@ object AiPrefs {
         var order: Int = type.ordinal
     )
 
+    /**
+     * IMPORTANT: Must use context.prefs() (device-protected storage, same as Heliboard's
+     * settings file). Using getSharedPreferences("settings", ...) writes/reads a DIFFERENT
+     * file, which makes keys appear erased.
+     */
+    fun prefs(context: Context) = context.prefs()
+
     fun getProvider(context: Context): Provider {
-        val name = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-            .getString(Settings.PREF_AI_PROVIDER, Provider.GOOGLE_AI.name) ?: Provider.GOOGLE_AI.name
+        val name = prefs(context).getString(Settings.PREF_AI_PROVIDER, Provider.GOOGLE_AI.name) ?: Provider.GOOGLE_AI.name
         return try { Provider.valueOf(name) } catch (_: Exception) { Provider.GOOGLE_AI }
     }
 
     fun getApiKey(context: Context): String {
-        return context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-            .getString(Settings.PREF_AI_API_KEY, "") ?: ""
+        return prefs(context).getString(Settings.PREF_AI_API_KEY, "") ?: ""
+    }
+
+    fun setApiKey(context: Context, key: String) {
+        prefs(context).edit().putString(Settings.PREF_AI_API_KEY, key).apply()
     }
 
     fun getModel(context: Context): String {
         val provider = getProvider(context)
-        return context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-            .getString(Settings.PREF_AI_MODEL, provider.defaultModel) ?: provider.defaultModel
+        return prefs(context).getString(Settings.PREF_AI_MODEL, provider.defaultModel) ?: provider.defaultModel
     }
 
     fun getEndpoint(context: Context): String {
         val provider = getProvider(context)
-        return context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-            .getString(Settings.PREF_AI_ENDPOINT, provider.defaultEndpoint()) ?: provider.defaultEndpoint()
+        return prefs(context).getString(Settings.PREF_AI_ENDPOINT, provider.defaultEndpoint()) ?: provider.defaultEndpoint()
     }
 }

@@ -13,6 +13,7 @@ import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.SubtypeSettings
 import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.latin.utils.upgradeToolbarPrefs
+import helium314.keyboard.latin.utils.enableAiToolbarKeys
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,6 +41,9 @@ class App : Application() {
 
         RichInputMethodManager.init(this)
         checkVersionUpgrade(this)
+        // Sriboard: always ensure AI toolbar keys exist (release too), so HeliBoard
+        // upgraders get the AI Fix key in their toolbar
+        enableAiToolbarKeys(prefs())
         if (BuildConfig.DEBUG) // do this on every debug apk start because we may work on adding a new toolbar key
             upgradeToolbarPrefs(prefs())
         transferOldPinnedClips(this) // todo: remove in a few months, maybe end 2026

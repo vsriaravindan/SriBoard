@@ -3,6 +3,7 @@ package helium314.keyboard.ai
 
 import android.content.Context
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.latin.utils.prefs
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -70,7 +71,7 @@ object AiPresetManager {
     )
 
     fun getPresets(context: Context): List<SerializablePreset> {
-        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefs = context.prefs()
         val stored = prefs.getString(Settings.PREF_AI_PRESETS_JSON, null) ?: return defaultPresets
         return try {
             val parsed = json.decodeFromString<List<SerializablePreset>>(stored)
@@ -89,7 +90,7 @@ object AiPresetManager {
     }
 
     fun savePresets(context: Context, presets: List<SerializablePreset>) {
-        val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefs = context.prefs()
         prefs.edit().putString(Settings.PREF_AI_PRESETS_JSON, json.encodeToString(presets)).apply()
     }
 

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package helium314.keyboard.ai
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -15,16 +13,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.prefs
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /**
  * AI Settings screen — manage provider, API key, presets.
- * API key is stored in SharedPreferences (device-protected storage).
+ * All values are stored in Heliboard's device-protected prefs (context.prefs()).
+ * The API key is written only on Save, never auto-saved.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,23 +33,25 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
     val prefs = context.prefs()
     val scrollState = rememberScrollState()
 
-    val currentProvider = remember {
-        mutableStateOf(AiPrefs.getProvider(context))
-    }
-    val apiKey = remember {
-        mutableStateOf(AiPrefs.getApiKey(context))
-    }
-    val model = remember {
-        mutableStateOf(AiPrefs.getModel(context))
-    }
-    val endpoint = remember {
-        mutableStateOf(AiPrefs.getEndpoint(context))
-    }
-    val enabled = remember {
-        mutableStateOf(prefs.getBoolean(Settings.PREF_AI_ENABLED, false))
-    }
-    var presets by remember {
-        mutableStateOf(AiPresetManager.getPresets(context))
+    // Load current values from prefs once
+    val currentProvider = remember { mutableStateOf(AiPrefs.getProvider(context)) }
+    val apiKey = remember { mutableStateOf(AiPrefs.getApiKey(context)) }
+    val model = remember { mutableStateOf(AiPrefs.getModel(context)) }
+    val endpoint = remember { mutableStateOf(AiPrefs.getEndpoint(context)) }
+    val enabled = remember { mutableStateOf(prefs.getBoolean(Settings.PREF_AI_ENABLED, false)) }
+    var presets by remember { mutableStateOf(AiPresetManager.getPresets(context)) }
+    var apiKeyVisible by remember { mutableStateOf(false) }
+
+    fun saveAll() {
+        prefs.edit()
+            .putString(Settings.PREF_AI_PROVIDER, currentProvider.value.name)
+            .putString(Settings.PREF_AI_API_KEY, apiKey.value.trim())
+            .putString(Settings.PREF_AI_MODEL, model.value.trim())
+            .putString(Settings.PREF_AI_ENDPOINT, endpoint.value.trim())
+            .putBoolean(Settings.PREF_AI_ENABLED, enabled.value)
+            .apply()
+        AiPresetManager.savePresets(context, presets)
+        Toast.makeText(context, "AI settings saved", Toast.LENGTH_SHORT).show()
     }
 
     Scaffold(
@@ -57,9 +59,10 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_screen_ai)) },
                 navigationIcon = {
-                    TextButton(onClick = onClickBack) {
-                        Text("< " + stringResource(R.string.settings_screen_preferences))
-                    }
+                    TextButton(onClick = onClickBack) { Text("< " + stringResource(R.string.settings_screen_preferences)) }
+                },
+                actions = {
+                    TextButton(onClick = { saveAll() }) { Text("Save") }
                 }
             )
         }
@@ -76,10 +79,7 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
             SwitchPreferenceItem(
                 title = "Enable AI Features",
                 checked = enabled.value,
-                onCheckedChange = {
-                    enabled.value = it
-                    prefs.edit().putBoolean(Settings.PREF_AI_ENABLED, it).apply()
-                }
+                onCheckedChange = { enabled.value = it }
             )
 
             if (!enabled.value) return@Column
@@ -111,14 +111,10 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
                             text = { Text(provider.displayName) },
                             onClick = {
                                 currentProvider.value = provider
-                                prefs.edit().putString(Settings.PREF_AI_PROVIDER, provider.name).apply()
-                                // Reset model to default for this provider
+                                // Reset model to this provider's default
                                 model.value = provider.defaultModel
-                                prefs.edit().putString(Settings.PREF_AI_MODEL, provider.defaultModel).apply()
-                                // Set default endpoint if not custom
                                 if (!provider.requiresEndpoint) {
                                     endpoint.value = provider.defaultEndpoint()
-                                    prefs.edit().putString(Settings.PREF_AI_ENDPOINT, provider.defaultEndpoint()).apply()
                                 }
                                 expanded = false
                             }
@@ -127,40 +123,37 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
                 }
             }
 
-            // API Key
+            // API Key (masked, saved on Save press)
             OutlinedTextField(
                 value = apiKey.value,
-                onValueChange = {
-                    apiKey.value = it
-                    prefs.edit().putString(Settings.PREF_AI_API_KEY, it).apply()
-                },
+                onValueChange = { apiKey.value = it },
                 label = { Text("API Key") },
                 placeholder = { Text("sk-... or AIza...") },
-                modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
+                visualTransformation = if (apiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    TextButton(onClick = { apiKeyVisible = !apiKeyVisible }) {
+                        Text(if (apiKeyVisible) "HIDE" else "SHOW")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                modifier = Modifier.fillMaxWidth()
             )
 
             // Model
             OutlinedTextField(
                 value = model.value,
-                onValueChange = {
-                    model.value = it
-                    prefs.edit().putString(Settings.PREF_AI_MODEL, it).apply()
-                },
+                onValueChange = { model.value = it },
                 label = { Text(stringResource(R.string.ai_model)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
-            // Endpoint (for OpenAI-compatible providers)
+            // Endpoint (editable only for custom OpenAI-compatible)
             if (currentProvider.value == AiPrefs.Provider.CUSTOM_OPENAI) {
                 OutlinedTextField(
                     value = endpoint.value,
-                    onValueChange = {
-                        endpoint.value = it
-                        prefs.edit().putString(Settings.PREF_AI_ENDPOINT, it).apply()
-                    },
+                    onValueChange = { endpoint.value = it },
                     label = { Text(stringResource(R.string.ai_custom_endpoint)) },
                     placeholder = { Text("https://api.example.com/v1") },
                     modifier = Modifier.fillMaxWidth(),
@@ -174,10 +167,18 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
                 )
             }
 
+            // Save button (prominent)
+            Button(
+                onClick = { saveAll() },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Text("Save AI Settings")
+            }
+
             HorizontalDivider()
             Text("Presets", style = MaterialTheme.typography.titleSmall)
             Text(
-                text = "Only enabled presets appear as toolbar keys. Long press and drag to reorder.",
+                text = "Only enabled presets appear as toolbar keys. Reorder with ▲▼.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -190,13 +191,11 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
                         val updated = presets.toMutableList()
                         updated[index] = updated[index].copy(prompt = newPrompt)
                         presets = updated
-                        AiPresetManager.savePresets(context, updated)
                     },
                     onEnabledChange = { newEnabled ->
                         val updated = presets.toMutableList()
                         updated[index] = updated[index].copy(enabled = newEnabled)
                         presets = updated
-                        AiPresetManager.savePresets(context, updated)
                     },
                     onMoveUp = {
                         if (index > 0) {
@@ -211,6 +210,14 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
                         }
                     }
                 )
+            }
+
+            // Bottom save button
+            Button(
+                onClick = { saveAll() },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            ) {
+                Text("Save AI Settings")
             }
 
             Spacer(Modifier.height(32.dp))
@@ -257,16 +264,15 @@ private fun AiPresetCard(
                     modifier = Modifier.padding(end = 8.dp)
                 )
                 Text(displayName, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                // Move buttons
                 TextButton(onClick = onMoveUp, enabled = preset.enabled) { Text("▲") }
                 TextButton(onClick = onMoveDown, enabled = preset.enabled) { Text("▼") }
             }
             if (preset.enabled) {
-                val promptText = remember(preset.prompt) { mutableStateOf(preset.prompt) }
+                var promptText by remember(preset.prompt) { mutableStateOf(preset.prompt) }
                 OutlinedTextField(
-                    value = promptText.value,
+                    value = promptText,
                     onValueChange = {
-                        promptText.value = it
+                        promptText = it
                         onPromptChange(it)
                     },
                     label = { Text(stringResource(R.string.ai_custom_prompt)) },

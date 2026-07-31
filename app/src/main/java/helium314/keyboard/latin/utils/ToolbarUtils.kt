@@ -214,6 +214,34 @@ private fun upgradeToolbarPref(prefs: SharedPreferences, pref: String, default: 
 
 fun getEnabledToolbarKeys(prefs: SharedPreferences) = getEnabledToolbarKeys(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref)
 
+/**
+ * Sriboard: ensure AI toolbar keys exist and AI_FIX is enabled by default.
+ * Runs on every app start (release too), so users upgrading from HeliBoard get the
+ * AI keys added to their existing toolbar prefs.
+ */
+fun enableAiToolbarKeys(prefs: SharedPreferences) {
+    // One-time migration: adds AI keys to existing HeliBoard toolbar prefs and enables AI_FIX.
+    if (prefs.getBoolean(PREF_AI_TOOLBAR_MIGRATED, false)) return
+    upgradeToolbarPref(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref)
+    upgradeToolbarPref(prefs, Settings.PREF_PINNED_TOOLBAR_KEYS, defaultPinnedToolbarPref)
+    upgradeToolbarPref(prefs, Settings.PREF_CLIPBOARD_TOOLBAR_KEYS, defaultClipboardToolbarPref)
+    // AI_FIX must be enabled by default (others stay off until user enables them)
+    setToolbarKeyEnabled(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref, ToolbarKey.AI_FIX, true)
+    prefs.edit { putBoolean(PREF_AI_TOOLBAR_MIGRATED, true) }
+}
+
+private const val PREF_AI_TOOLBAR_MIGRATED = "ai_toolbar_keys_migrated"
+
+private fun setToolbarKeyEnabled(prefs: SharedPreferences, pref: String, default: String, key: ToolbarKey, enabled: Boolean) {
+    val string = prefs.getString(pref, default)!!
+    val entries = string.split(Separators.ENTRY).toMutableList()
+    val index = entries.indexOfFirst { it.startsWith(key.name + Separators.KV) }
+    if (index >= 0) {
+        entries[index] = key.name + Separators.KV + enabled
+        prefs.edit { putString(pref, entries.joinToString(Separators.ENTRY)) }
+    }
+}
+
 fun getPinnedToolbarKeys(prefs: SharedPreferences) = getEnabledToolbarKeys(prefs, Settings.PREF_PINNED_TOOLBAR_KEYS, defaultPinnedToolbarPref)
 
 fun getEnabledClipboardToolbarKeys(prefs: SharedPreferences) = getEnabledToolbarKeys(prefs, Settings.PREF_CLIPBOARD_TOOLBAR_KEYS, defaultClipboardToolbarPref)
