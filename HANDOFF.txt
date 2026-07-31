@@ -1,0 +1,227 @@
+================================================================================
+ SRIBOARD — FULL PROJECT HANDOFF (for future sessions)
+ Written: 2026-07-31 | Status: v1.4 WORKING (AI Fix confirmed by user)
+================================================================================
+
+--------------------------------------------------------------------------------
+ 1. WHAT THIS PROJECT IS
+--------------------------------------------------------------------------------
+Sriboard = HeliBoard (helium314.keyboard, AOSP-based privacy keyboard) + AI
+text features built IN-PROCESS (no AccessibilityService, no Developer Options).
+
+The AI Fix button works by reading text before the cursor through the IME's own
+InputConnection, calling the user's chosen AI API, then committing the result
+back through commitText() — all inside the keyboard process.
+
+--------------------------------------------------------------------------------
+ 2. LOCATIONS
+--------------------------------------------------------------------------------
+- Project dir:  C:\Users\vrsri\scratch\sriboard
+- Upstream:     C:\Users\vrsri\scratch\heliboard  (clean HeliBoard clone for diffs)
+- SwiftSlate:   C:\Users\vrsri\scratch\swiftslate   (reference for AI fix concepts)
+- GitHub repo:  https://github.com/vsriaravindan/SriBoard  (branch: main)
+- Releases:     https://github.com/vsriaravindan/SriBoard/releases
+  Latest: v1.4  ->  Sriboard-v1.4-release.apk (signed with debug key, all ABIs)
+- APK build output: app/build/outputs/apk/release/Sriboard_4.0-dev1-release.apk
+- Debug keystore: C:\Users\vrsri\.android\debug.keystore (android/android)
+  (release build type is configured to sign with the debug key)
+
+--------------------------------------------------------------------------------
+ 3. TECH STACK / FRAMEWORK
+--------------------------------------------------------------------------------
+- Language: Kotlin 2.3.20 + Java 17, AGP 8.13.2, Gradle 8.14 (wrapper)
+- compileSdk 36, targetSdk 36, minSdk 21, package helium314.keyboard
+- UI: Jetpack Compose (Material3, navigation-compose) for SETTINGS screens only.
+  The keyboard itself is legacy View-based (LatinIME.java + KeyboardSwitcher).
+- Native: JNI (NDK 28) gesture typing / dictionary libs under app/src/main/jni/
+- No new dependencies added for AI — HTTP via java.net.HttpURLConnection
+- Coroutines: kotlinx.coroutines (already a HeliBoard dependency)
+
+BUILD COMMANDS (Windows git-bash):
+  export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
+  export ANDROID_HOME="/c/Users/vrsri/AppData/Local/Android/Sdk"
+  export PATH="$JAVA_HOME/bin:$PATH"
+  cd /c/Users/vrsri/scratch/sriboard
+  ./gradlew assembleRelease          # full universal APK (~22MB, 13min cold)
+  # NOTE: -Pandroid.injected.build.abi=arm64-v8a builds only arm64 (faster, 4min)
+  # NOTE: use --no-configuration-cache if build.gradle.kts changed and output
+  #       APK did not regenerate (known gotcha, see section 8)
+
+--------------------------------------------------------------------------------
+ 4. AI FEATURE ARCHITECTURE (all new code is self-contained)
+--------------------------------------------------------------------------------
+All AI code lives in ONE package:  app/src/main/java/helium314/keyboard/ai/
+
+  AiPrefs.kt          — Provider enum (GOOGLE_AI/GROK/DEEPSEEK_FLASH/DEEPSEEK_PRO/
+                        CUSTOM_OPENAI), PresetType enum (FIX/TRANSLATE_TAMIL/
+                        CUSTOM_1..5), key/model/endpoint getters.
+                        CRITICAL: all prefs via context.prefs() (device-protected).
+  AiApiClient.kt      — HTTP layer. Gemini native API + OpenAI-compatible
+                        chat/completions. Manual JSON parsing (no new deps).
+                        API key goes ONLY to the configured endpoint.
+  AiPresetManager.kt  — Preset persistence (JSON in prefs), reorder, enable/disable.
+  AiEngine.kt         — THE CORE. handleKeyCode() reads text via InputConnection,
+                        calls AI on Dispatchers.IO, commits result, undo on 2nd tap.
+                        Toasts shown with TOP gravity (visible above keyboard!).
+  AiSettingsScreen.kt — Compose screen: provider dropdown, masked API key field
+                        with SHOW/HIDE, model, endpoint, preset cards, SAVE button.
+
+KEY CODE FLOW (how a toolbar tap reaches the AI engine):
+  toolbar tap -> ToolbarUtils.onClickToolbarKey() -> getCodeForToolbarKey()
+    -> KeyboardActionListenerImpl.onCodeInput(code) -> Event
+    -> LatinIME.onEvent(event) [AI codes intercepted here]
+    -> AiEngine.handleKeyCode(code, getCurrentInputConnection())
+
+Toolbar keys added (ToolbarKey enum in ToolbarUtils.kt):
+  AI_FIX(-11001), AI_TRANSLATE_TAMIL(-11002), AI_CUSTOM_1..5(-11003..-11007)
+
+Icons (real vector drawables, MUST exist or keyboard crashes at open):
+  res/drawable/ic_ai_fix.xml (sparkle), ic_ai_translate.xml (文),
+  ic_ai_custom.xml (sparkle) — mapped in KeyboardIconsSet.kt (3 style maps:
+  material/holo/rounded — ALL THREE must be kept in sync!)
+
+--------------------------------------------------------------------------------
+ 5. FILES MODIFIED (vs upstream HeliBoard) — for patching new versions
+--------------------------------------------------------------------------------
+  1. app/src/main/AndroidManifest.xml        — ADDED android.permission.INTERNET
+  2. app/build.gradle.kts                    — release signingConfig = debug key;
+                                               APK filename -> "Sriboard_..."
+  3. res/values/donottranslate.xml           — english_ime_name = "Sriboard"
+  4. res/values/strings.xml                  — AI strings + Sriboard names
+  5. latin/settings/Settings.java            — 7 PREF_AI_* constants
+  6. keyboard/internal/keyboard_parser/floris/KeyCode.kt — AI_* constants + in
+                                               checkAndConvertCode + isModifier list
+  7. keyboard/internal/KeyboardIconsSet.kt   — 3 icon maps add AI keys (real ids)
+  8. latin/utils/ToolbarUtils.kt             — ToolbarKey enum +7, code mappings,
+                                               default toolbar includes AI_FIX,
+                                               enableAiToolbarKeys() one-time migration
+  9. latin/LatinIME.java                     — mAiEngine field, init in onCreate(),
+                                               AI interception in onEvent(),
+                                               destroy() in onDestroy()
+ 10. latin/App.kt                            — enableAiToolbarKeys(prefs()) on every
+                                               start (release too, not just debug)
+ 11. settings/SettingsNavHost.kt             — AiSettings route
+ 12. settings/screens/MainSettingsScreen.kt  — AI menu entry + callback param
+
+  NEW: app/src/main/java/helium314/keyboard/ai/*.kt  (5 files)
+  NEW: app/src/main/res/drawable/ic_ai_{fix,translate,custom}.xml (3 files)
+
+--------------------------------------------------------------------------------
+ 6. BUGS FOUND & FIXED (chronological — learn from these!)
+--------------------------------------------------------------------------------
+ B1. [v1.0] APK would not install ("package appears invalid")
+     Cause: release build was UNSIGNED (no signingConfig).
+     Fix:   signingConfig = signingConfigs.getByName("debug") in build.gradle.kts.
+
+ B2. [v1.0] API key "erased" after leaving settings / no save button
+     Cause: AiSettingsScreen wrote via context.prefs() (device-protected
+            file helium314.keyboard_preferences) but AiPrefs/AiEngine READ via
+            getSharedPreferences("settings") — TWO DIFFERENT FILES.
+     Fix:   ALL AI prefs access via context.prefs() (helium314.keyboard.latin
+            .utils.prefs extension = DeviceProtectedUtils). Added explicit
+            Save button + masked key field.
+
+ B3. [v1.1] AI Fix button not in toolbar for HeliBoard upgraders
+     Cause: upgradeToolbarPrefs() only ran in DEBUG builds.
+     Fix:   enableAiToolbarKeys(prefs()) runs every app start; one-time
+            migration (ai_toolbar_keys_migrated flag) enables AI_FIX in
+            existing toolbar prefs.
+
+ B4. [v1.2] Keyboard CRASHED when opened (AI Fix button rendered)
+     Cause: AI toolbar keys mapped to icon resource ID 0 in KeyboardIconsSet;
+            getNewDrawable("ai_fix") -> ContextCompat.getDrawable(ctx, 0)
+            -> Resources.NotFoundException -> crash.
+     Fix:   real vector drawables for AI keys; createToolbarKey wrapped in
+            try/catch so a missing icon can never crash the keyboard.
+
+ B5. [v1.3] AI Fix button tap did NOTHING (silently ignored)
+     Cause: isAiKeyCode(): keyCode in AI_FIX..AI_CUSTOM_5 = -11001..-11007
+            = EMPTY range (start > end) -> always false -> event fell through
+            to InputLogic and was ignored.
+     Fix:   keyCode in KeyCode.AI_CUSTOM_5..KeyCode.AI_FIX  (ascending!).
+     LESSON: Kotlin IntRange with start>end is empty; negative key codes must
+             be ranged smallest..largest.
+
+ B6. [v1.4] AI Fix vibrated but did nothing / no error visible
+     Cause: HeliBoard manifest has NO android.permission.INTERNET (it's an
+            offline privacy keyboard!) — every AI call threw SecurityException
+            instantly; error toasts appeared BEHIND the keyboard (bottom
+            gravity) so the user never saw them.
+     Fix:   added INTERNET permission; toasts now use TOP gravity; added
+            "AI processing…" feedback toast.
+     LESSON: check the manifest for INTERNET when adding ANY network feature
+             to a privacy-focused fork; toasts from an IME are hidden behind
+             the keyboard — always use TOP gravity.
+
+--------------------------------------------------------------------------------
+ 7. API KEY SECURITY MODEL
+--------------------------------------------------------------------------------
+- Key stored in device-protected SharedPreferences (credential-encrypted).
+- Sent ONLY in the HTTPS request to the configured provider endpoint:
+  Gemini: ?key=... in URL; OpenAI-compatible: Authorization: Bearer header.
+- No telemetry, no logging of keys, no third-party endpoints.
+- INTERNET permission was added explicitly for AI only.
+
+--------------------------------------------------------------------------------
+ 8. KNOWN GOTCHAS / WARNINGS
+--------------------------------------------------------------------------------
+- Gradle configuration cache: after editing build.gradle.kts, the output APK
+  may NOT regenerate (stale filename in app/build/intermediates/apk). Fix:
+  rm -rf app/build app/.cxx build && ./gradlew assembleRelease
+  --no-configuration-cache, or just add --no-configuration-cache.
+- First build after clean takes ~13 min (4 NDK ABIs). Use
+  -Pandroid.injected.build.abi=arm64-v8a for speed when testing.
+- Toolbar icon maps are THREE (material/holo/rounded) — patch all three.
+- R8 minification is ON for release (-dontobfuscate in proguard-rules.pro,
+  so names survive; no special keep rules needed for the AI package so far).
+- Do NOT commit local.properties (contains sdk.dir) — .gitignore already has it.
+- Toolbar AI keys are NOT shown in pinned/clipboard toolbars by default; only
+  main toolbar gets AI_FIX via migration.
+
+--------------------------------------------------------------------------------
+ 9. KNOWN LIMITATIONS / IDEAS FOR NEXT SESSION
+--------------------------------------------------------------------------------
+- No visible progress indicator ON the key itself (only a toast). Could spin
+  the ⚡ icon via onProcessingStateChanged -> LatinIME wiring.
+- Text replacement: deletes text BEFORE cursor (up to 4000 chars) + selection,
+  then commits result. Text AFTER cursor is preserved but the cursor jumps to
+  end of committed text — minor UX edge case.
+- Undo is single-level, toggles original<->result, per text field.
+- No per-provider "test connection" button in settings yet.
+- Password fields are NOT explicitly blocked — InputConnection still works,
+  but consider checking EditorInfo inputType for TYPE_TEXT_VARIATION_PASSWORD.
+- Custom presets have no custom ICON (all share ic_ai_custom); fine for now.
+- Toast "AI processing…" + result toast queue back-to-back (LENGTH_LONG each).
+
+--------------------------------------------------------------------------------
+ 10. RELEASE HISTORY (GitHub releases)
+--------------------------------------------------------------------------------
+ v1.0 a0d5585  first signed universal APK
+ v1.1 adc286f  AI prefs persistence fix + Save button + toolbar migration
+ v1.2 dcc58a5  keyboard crash fix (icon id 0) + real AI icons
+ v1.3 782a6b5  AI Fix tap fix (reversed IntRange)
+ v1.4 a99d293  INTERNET permission + visible status toasts  <<< CONFIRMED WORKING
+
+ How to release a new version:
+   ./gradlew assembleRelease  (or with ABI flag for speed)
+   cp app/build/outputs/apk/release/Sriboard_4.0-dev1-release.apk Sriboard-vX.Y-release.apk
+   gh release create vX.Y --title "Sriboard vX.Y — ..." --notes "..." Sriboard-vX.Y-release.apk
+   git add -A && git commit -m "..." && git push
+
+--------------------------------------------------------------------------------
+ 11. PATCHING A NEW HELIBOARD VERSION (the user's original requirement)
+--------------------------------------------------------------------------------
+When HeliBoard releases an update:
+ 1. git clone fresh HeliBoard
+ 2. COPY app/src/main/java/helium314/keyboard/ai/  ->  (5 files, zero conflicts)
+ 3. COPY app/src/main/res/drawable/ic_ai_*.xml     ->  (3 files)
+ 4. Apply the 12-file patch list from section 5 (mostly small adds; the
+    ToolbarKey enum + icon maps + LatinIME.onEvent interception are the
+    touch points that occasionally shift).
+ 5. Re-apply the 6 bug fixes from section 6 if the upstream code changed
+    around them (B5/B6 are the ones that can silently regress).
+ 6. Build + release per section 10.
+
+================================================================================
+ END OF HANDOFF
+================================================================================
