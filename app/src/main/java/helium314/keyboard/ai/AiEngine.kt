@@ -136,6 +136,7 @@ class AiEngine(private val context: Context) {
         }
 
         // Launch AI call on background thread
+        showToast("AI processing…")
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 val provider = AiPrefs.getProvider(context)
@@ -204,7 +205,13 @@ class AiEngine(private val context: Context) {
 
     private fun showToast(msg: String) {
         handler.post {
-            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+            try {
+                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).apply {
+                    // show above the keyboard, otherwise it's hidden behind the IME
+                    setGravity(android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL, 0, 200)
+                    show()
+                }
+            } catch (_: Exception) {}
         }
     }
 
