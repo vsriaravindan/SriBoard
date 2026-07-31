@@ -65,7 +65,7 @@ class AiEngine(private val context: Context) {
             else -> null
         }
 
-        fun isAiKeyCode(keyCode: Int): Boolean = keyCode in KeyCode.AI_FIX..KeyCode.AI_CUSTOM_5
+        fun isAiKeyCode(keyCode: Int): Boolean = keyCode in KeyCode.AI_CUSTOM_5..KeyCode.AI_FIX
 
         private const val CONFIRM_HAPTIC = 1
         private const val REJECT_HAPTIC = 2
