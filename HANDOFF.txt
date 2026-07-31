@@ -260,6 +260,13 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 apps-grid (3 icon maps). PRESET->TOOLBAR SYNC: syncPresetToolbar-
                 Keys() enables a preset's toolbar key on Save; AI_MENU gated on
                 PREF_AI_ENABLED (setAiMenuKeyEnabled) in App + settings save.
+ v1.9 cb3ca25  PROMPT TYPING FIX: the in-IME EditText never received our keys
+                (IME keys go to the app's InputConnection). Now the panel tracks
+                focus (isPromptFocused) and LatinIME.onEvent routes keys into it
+                via consumeKeyEvent(): chars appended (surrogate pairs handled),
+                DEL(-7) backspaces, ENTER('\n')/SHIFT_ENTER submit. clearPrompt-
+                Focus() on hide/dismiss. CUSTOM PROMPTS: runPrompt() appends
+                "\nReturn ONLY the output, nothing else." before sending.
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)
