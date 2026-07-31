@@ -186,6 +186,7 @@ object KeyCode {
     const val DPAD =                      -10054
 
     // Sriboard AI key codes
+    const val AI_MENU =                   -11008
     const val AI_FIX =                    -11001
     const val AI_TRANSLATE_TAMIL =        -11002
     const val AI_CUSTOM_1 =               -11003
@@ -222,7 +223,7 @@ object KeyCode {
         SEND_INTENT_THREE, EMOJI_SEARCH, INLINE_EMOJI_SEARCH_DONE, META_LOCK,
         BACKGROUND_GATHERING, BACKGROUND_GATHERING_TEMP_OFF, DPAD,
         // Sriboard AI codes
-        AI_FIX, AI_TRANSLATE_TAMIL, AI_CUSTOM_1, AI_CUSTOM_2, AI_CUSTOM_3, AI_CUSTOM_4, AI_CUSTOM_5,
+        AI_MENU, AI_FIX, AI_TRANSLATE_TAMIL, AI_CUSTOM_1, AI_CUSTOM_2, AI_CUSTOM_3, AI_CUSTOM_4, AI_CUSTOM_5,
         -> this
 
         KEY_REPEAT if (longPress) -> this

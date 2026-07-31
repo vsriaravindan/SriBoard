@@ -191,6 +191,7 @@ fun getCodeForToolbarKey(key: ToolbarKey) = Settings.getInstance().getCustomTool
     AI_CUSTOM_3 -> KeyCode.AI_CUSTOM_3
     AI_CUSTOM_4 -> KeyCode.AI_CUSTOM_4
     AI_CUSTOM_5 -> KeyCode.AI_CUSTOM_5
+    AI_MENU -> KeyCode.AI_MENU
 }
 
 fun getCodeForToolbarKeyLongClick(key: ToolbarKey) = Settings.getInstance().getCustomToolbarLongpressCode(key) ?: when (key) {
@@ -219,7 +220,7 @@ enum class ToolbarKey {
     INCOGNITO, AUTOCORRECT, CLEAR_CLIPBOARD, CLOSE_HISTORY, EMOJI, LEFT, RIGHT, UP, DOWN, WORD_LEFT, WORD_RIGHT,
     PAGE_UP, PAGE_DOWN, FULL_LEFT, FULL_RIGHT, PAGE_START, PAGE_END, BACKGROUND_GATHERING,
     // Sriboard AI toolbar keys
-    AI_FIX, AI_TRANSLATE_TAMIL, AI_CUSTOM_1, AI_CUSTOM_2, AI_CUSTOM_3, AI_CUSTOM_4, AI_CUSTOM_5
+    AI_FIX, AI_TRANSLATE_TAMIL, AI_CUSTOM_1, AI_CUSTOM_2, AI_CUSTOM_3, AI_CUSTOM_4, AI_CUSTOM_5, AI_MENU
 }
 
 enum class ToolbarMode {
@@ -302,7 +303,8 @@ val allAiToolbarKeys = listOf(
     ToolbarKey.AI_CUSTOM_2,
     ToolbarKey.AI_CUSTOM_3,
     ToolbarKey.AI_CUSTOM_4,
-    ToolbarKey.AI_CUSTOM_5
+    ToolbarKey.AI_CUSTOM_5,
+    ToolbarKey.AI_MENU
 )
 
 /**

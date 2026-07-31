@@ -148,6 +148,7 @@ public class LatinIME extends InputMethodService implements
     private final StatsUtilsManager mStatsUtilsManager;
     // Sriboard AI engine
     private AiEngine mAiEngine;
+    private helium314.keyboard.ai.AiQuickPanelView mAiQuickPanel;
     // Working variable for {@link #startShowingInputView()} and
     // {@link #onEvaluateInputViewShown()}.
     private boolean mIsExecutingStartShowingInputView;
@@ -559,10 +560,12 @@ public class LatinIME extends InputMethodService implements
         // Sriboard: show the progress indicator on AI toolbar keys while a request runs
         mAiEngine.setOnProcessingStateChanged(processing -> {
             helium314.keyboard.latin.utils.ToolbarUtilsKt.setAiToolbarProcessing(processing, null);
+            if (mAiQuickPanel != null) mAiQuickPanel.setProcessingState(processing, null);
             return Unit.INSTANCE;
         });
         mAiEngine.setOnProgress(percent -> {
             helium314.keyboard.latin.utils.ToolbarUtilsKt.setAiToolbarProcessing(true, percent);
+            if (mAiQuickPanel != null) mAiQuickPanel.setProcessingState(true, percent);
             return Unit.INSTANCE;
         });
         if (FoldableUtils.INSTANCE.isFoldable())
@@ -777,6 +780,31 @@ public class LatinIME extends InputMethodService implements
         mInsetsUpdater = ViewOutlineProviderUtilsKt.setInsetsOutlineProvider(view);
         KtxKt.updateSoftInputWindowLayoutParameters(this, mInputView);
         updateSuggestionStripView(view);
+        updateAiQuickPanel(view);
+    }
+
+    // Sriboard: find and wire the AI Quick Panel (chips + custom prompt bar)
+    private void updateAiQuickPanel(View view) {
+        mAiQuickPanel = view.findViewById(R.id.ai_quick_panel);
+        if (mAiQuickPanel == null) return;
+        mAiQuickPanel.setOnChipClick(type -> {
+            if (mAiEngine != null)
+                mAiEngine.runPreset(type, getCurrentInputConnection());
+            return Unit.INSTANCE;
+        });
+        mAiQuickPanel.setOnPromptSubmit(prompt -> {
+            if (mAiEngine != null)
+                mAiEngine.runPrompt(prompt, getCurrentInputConnection());
+            return Unit.INSTANCE;
+        });
+    }
+
+    // Sriboard: AI menu toolbar key toggles the Quick Panel
+    private void toggleAiQuickPanel() {
+        if (mAiQuickPanel == null) return;
+        final boolean visible = mAiQuickPanel.getVisibility() == View.VISIBLE;
+        if (!visible) mAiQuickPanel.refreshChips();
+        mAiQuickPanel.setVisibility(visible ? View.GONE : View.VISIBLE);
     }
 
     public void updateSuggestionStripView(View view) {
@@ -806,6 +834,9 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onFinishInputView(final boolean finishingInput) {
+        // Sriboard: hide the AI Quick Panel when the keyboard is dismissed
+        if (mAiQuickPanel != null)
+            mAiQuickPanel.setVisibility(View.GONE);
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
         mStatsUtilsManager.onFinishInputView();
@@ -1429,8 +1460,13 @@ public class LatinIME extends InputMethodService implements
         if (KeyCode.VOICE_INPUT == event.getKeyCode()) {
             mRichImm.switchToShortcutIme(this);
         }
-        // Sriboard AI: handle AI key codes
+        // Sriboard AI: AI menu key toggles the Quick Panel
         final int keyCode = event.getKeyCode();
+        if (keyCode == KeyCode.AI_MENU) {
+            toggleAiQuickPanel();
+            return;
+        }
+        // Sriboard AI: handle AI key codes
         if (mAiEngine != null && AiEngine.Companion.isAiKeyCode(keyCode)) {
             // never send password field content to an AI API
             final EditorInfo editorInfo = getCurrentInputEditorInfo();

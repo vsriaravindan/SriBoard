@@ -160,7 +160,7 @@ class KeyboardIconsSet private constructor() {
                     ToolbarKey.AI_FIX -> R.drawable.ic_ai_fix
                     ToolbarKey.AI_TRANSLATE_TAMIL -> R.drawable.ic_ai_translate
                     ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2, ToolbarKey.AI_CUSTOM_3,
-                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5 -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5, ToolbarKey.AI_MENU -> R.drawable.ic_ai_custom
                 })
             }
         } }
@@ -228,7 +228,7 @@ class KeyboardIconsSet private constructor() {
                     ToolbarKey.AI_FIX -> R.drawable.ic_ai_fix
                     ToolbarKey.AI_TRANSLATE_TAMIL -> R.drawable.ic_ai_translate
                     ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2, ToolbarKey.AI_CUSTOM_3,
-                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5 -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5, ToolbarKey.AI_MENU -> R.drawable.ic_ai_custom
                 })
             }
         } }
@@ -296,7 +296,7 @@ class KeyboardIconsSet private constructor() {
                     ToolbarKey.AI_FIX -> R.drawable.ic_ai_fix
                     ToolbarKey.AI_TRANSLATE_TAMIL -> R.drawable.ic_ai_translate
                     ToolbarKey.AI_CUSTOM_1, ToolbarKey.AI_CUSTOM_2, ToolbarKey.AI_CUSTOM_3,
-                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5 -> R.drawable.ic_ai_custom
+                    ToolbarKey.AI_CUSTOM_4, ToolbarKey.AI_CUSTOM_5, ToolbarKey.AI_MENU -> R.drawable.ic_ai_custom
                 })
             }
         } }

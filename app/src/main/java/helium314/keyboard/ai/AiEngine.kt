@@ -35,7 +35,6 @@ class AiEngine(private val context: Context) {
     // For undo: save original text + cursor position
     private var lastOriginalText: String? = null
     private var lastOriginalCursor: Int = -1
-    private var lastKeyCode: Int = -1
 
     // Current in-flight request (for cancel on second tap)
     private var currentJob: Job? = null
@@ -78,15 +77,47 @@ class AiEngine(private val context: Context) {
     }
 
     /**
-     * Handle an AI key code. Called from LatinIME.onEvent() on main thread.
+     * Handle an AI toolbar key code. Called from LatinIME.onEvent() on main thread.
      * @return true if this was an AI key code (handled), false otherwise
      */
     fun handleKeyCode(keyCode: Int, connection: InputConnection?, isPasswordField: Boolean = false): Boolean {
         if (!isAiKeyCode(keyCode)) return false
-        if (connection == null) return true
-
         val presetType = keyCodeToPresetType(keyCode) ?: return true
+        return runPreset(presetType, connection, isPasswordField)
+    }
 
+    /**
+     * Run an AI preset by type (used by the AI Quick Panel chips).
+     * ONE API call per invocation — presets are prompt templates, not requests.
+     */
+    @JvmOverloads
+    fun runPreset(type: AiPrefs.PresetType, connection: InputConnection?, isPasswordField: Boolean = false): Boolean {
+        if (connection == null) return true
+        val prompt = AiPresetManager.getEnabledPresets(context).find { it.type == type.name }?.prompt
+            ?: type.defaultPrompt
+        return runRequest(prompt, connection, isPasswordField)
+    }
+
+    /**
+     * Run a one-off custom prompt (used by the AI Quick Panel prompt bar).
+     */
+    @JvmOverloads
+    fun runPrompt(prompt: String, connection: InputConnection?, isPasswordField: Boolean = false): Boolean {
+        if (connection == null) return true
+        if (prompt.isBlank()) {
+            showToast("Enter a prompt first")
+            performHaptic(REJECT_HAPTIC)
+            return true
+        }
+        return runRequest(prompt.trim(), connection, isPasswordField)
+    }
+
+    /**
+     * Shared request pipeline: password check → AI enabled check → cancel-on-2nd-tap →
+     * read text → call API → commit result. Used by toolbar keys, panel chips and the
+     * prompt bar. Exactly ONE [AiApiClient.generate] call per invocation.
+     */
+    private fun runRequest(prompt: String, connection: InputConnection, isPasswordField: Boolean): Boolean {
         // Sriboard: never send password field content to an AI API
         if (isPasswordField) {
             showToast("AI is blocked on password fields")
@@ -110,9 +141,12 @@ class AiEngine(private val context: Context) {
 
         if (!isProcessing.compareAndSet(false, true)) return true
 
-        // Note: no toggle-undo on repeated taps any more (v1.6) — every tap starts a
-        // fresh request (2nd tap while in-flight cancels). Use the toolbar UNDO key
-        // to revert, like any other edit.
+        if (prompt.isBlank()) {
+            showToast("No prompt configured for this preset")
+            performHaptic(REJECT_HAPTIC)
+            isProcessing.set(false)
+            return true
+        }
 
         // Read text before cursor
         val textBeforeCursor = connection.getTextBeforeCursor(4000, 0)?.toString() ?: ""
@@ -126,25 +160,11 @@ class AiEngine(private val context: Context) {
             return true
         }
 
-        // Save for undo
+        // Save for potential future undo
         lastOriginalText = textBeforeCursor + (connection.getSelectedText(0)?.toString() ?: "") + textAfterCursor
         lastOriginalCursor = connection.getTextBeforeCursor(4000, 0)?.length ?: 0
-        lastKeyCode = keyCode
 
         onProcessingStateChanged?.invoke(true)
-
-        // Get preset prompt
-        val presets = AiPresetManager.getEnabledPresets(context)
-        val preset = presets.find { it.type == presetType.name }
-        val prompt = preset?.prompt ?: presetType.defaultPrompt
-
-        if (prompt.isBlank()) {
-            showToast("No prompt configured for this preset")
-            performHaptic(REJECT_HAPTIC)
-            isProcessing.set(false)
-            onProcessingStateChanged?.invoke(false)
-            return true
-        }
 
         // Launch AI call on background thread
         showToast("AI processing…")
@@ -168,24 +188,17 @@ class AiEngine(private val context: Context) {
                 return@launch
             }
 
+            // Restore the icon/indicator FIRST. Nothing after this point may re-create
+            // the progress drawable, or it would stay stuck on the key (v1.5/1.6 bug).
             onProcessingStateChanged?.invoke(false)
-            onProgress?.invoke(100)
 
             if (result.success && result.text.isNotBlank()) {
-                // Replace the text via InputConnection
-                val ic = connection ?: run {
-                    showToast("Connection lost")
-                    performHaptic(REJECT_HAPTIC)
-                    isProcessing.set(false)
-                    return@launch
-                }
-
                 // Delete text before cursor, then commit the AI result
                 val deleteCount = textBeforeCursor.length + (connection.getSelectedText(0)?.length ?: 0)
                 if (deleteCount > 0) {
-                    ic.deleteSurroundingText(deleteCount, 0)
+                    connection.deleteSurroundingText(deleteCount, 0)
                 }
-                ic.commitText(result.text, 1)
+                connection.commitText(result.text, 1)
 
                 performHaptic(CONFIRM_HAPTIC)
                 showToast("Done")
@@ -211,7 +224,6 @@ class AiEngine(private val context: Context) {
         isProcessing.set(false)
         // clear the undo slot so the next tap starts a fresh request instead of
         // toggling undo on the never-committed original text
-        lastKeyCode = -1
         lastOriginalText = null
         lastOriginalCursor = -1
         onProcessingStateChanged?.invoke(false)
@@ -237,7 +249,6 @@ class AiEngine(private val context: Context) {
 
         lastOriginalText = null
         lastOriginalCursor = -1
-        lastKeyCode = -1
         performHaptic(CONFIRM_HAPTIC)
         showToast("Undone")
     }
