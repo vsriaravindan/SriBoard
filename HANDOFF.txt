@@ -232,7 +232,7 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
  v1.2 dcc58a5  keyboard crash fix (icon id 0) + real AI icons
  v1.3 782a6b5  AI Fix tap fix (reversed IntRange)
  v1.4 a99d293  INTERNET permission + visible status toasts  <<< CONFIRMED WORKING
- v1.5 <pending>  progress indicator +% on AI keys, seeded presets (3 auto-filled),
+ v1.5 aa11b76  progress indicator +% on AI keys, seeded presets (3 auto-filled),
                 auto-enable ALL AI toolbar keys on save, bundled Google gesture
                 lib (arm64), password-field block, cancel on 2nd tap, test button
 
