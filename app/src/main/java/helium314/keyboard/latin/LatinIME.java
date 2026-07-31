@@ -805,6 +805,7 @@ public class LatinIME extends InputMethodService implements
         final boolean visible = mAiQuickPanel.getVisibility() == View.VISIBLE;
         if (!visible) mAiQuickPanel.refreshChips();
         mAiQuickPanel.setVisibility(visible ? View.GONE : View.VISIBLE);
+        if (visible) mAiQuickPanel.clearPromptFocus();
     }
 
     public void updateSuggestionStripView(View view) {
@@ -835,8 +836,10 @@ public class LatinIME extends InputMethodService implements
     @Override
     public void onFinishInputView(final boolean finishingInput) {
         // Sriboard: hide the AI Quick Panel when the keyboard is dismissed
-        if (mAiQuickPanel != null)
+        if (mAiQuickPanel != null) {
             mAiQuickPanel.setVisibility(View.GONE);
+            mAiQuickPanel.clearPromptFocus();
+        }
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);
         mStatsUtilsManager.onFinishInputView();
@@ -1470,6 +1473,11 @@ public class LatinIME extends InputMethodService implements
         if (keyCode == KeyCode.AI_MENU) {
             toggleAiQuickPanel();
             return;
+        }
+        // Sriboard AI: while the Quick Panel prompt field is focused, route the
+        // keyboard's keys into the panel instead of the app's text field
+        if (mAiQuickPanel != null && mAiQuickPanel.isPromptFocused()) {
+            if (mAiQuickPanel.consumeKeyEvent(keyCode)) return;
         }
         // Sriboard AI: handle AI key codes
         if (mAiEngine != null && AiEngine.Companion.isAiKeyCode(keyCode)) {

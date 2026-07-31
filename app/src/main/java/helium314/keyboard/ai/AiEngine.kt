@@ -100,6 +100,8 @@ class AiEngine(private val context: Context) {
 
     /**
      * Run a one-off custom prompt (used by the AI Quick Panel prompt bar).
+     * Always appends a "return only the output" instruction so the API reply is
+     * clean text, not a chatty explanation.
      */
     @JvmOverloads
     fun runPrompt(prompt: String, connection: InputConnection?, isPasswordField: Boolean = false): Boolean {
@@ -109,7 +111,8 @@ class AiEngine(private val context: Context) {
             performHaptic(REJECT_HAPTIC)
             return true
         }
-        return runRequest(prompt.trim(), connection, isPasswordField)
+        val promptWithInstruction = prompt.trim() + "\nReturn ONLY the output, nothing else."
+        return runRequest(promptWithInstruction, connection, isPasswordField)
     }
 
     /**

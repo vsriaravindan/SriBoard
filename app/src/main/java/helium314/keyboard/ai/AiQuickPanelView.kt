@@ -17,6 +17,7 @@ import android.widget.TextView
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
 
 /**
  * Sriboard v1.7: AI Quick Panel — a row of labeled preset chips + a custom-prompt bar,
@@ -41,6 +42,8 @@ class AiQuickPanelView @JvmOverloads constructor(
     private val statusRow: LinearLayout
     private val statusProgress: ProgressBar
     private val statusText: TextView
+    private var promptFocused = false
+    private var pendingHighSurrogate: Char? = null
 
     init {
         orientation = VERTICAL
@@ -78,6 +81,10 @@ class AiQuickPanelView @JvmOverloads constructor(
                     true
                 } else false
             }
+            // Sriboard: the IME's own keyboard types into the app's field via
+            // InputConnection — this in-IME field needs its own focus tracking so
+            // LatinIME can route our key events into it instead.
+            setOnFocusChangeListener { _, hasFocus -> promptFocused = hasFocus }
         }
         promptRow.addView(promptEdit, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         val sendButton = ImageButton(context).apply {
@@ -152,10 +159,84 @@ class AiQuickPanelView @JvmOverloads constructor(
         }
     }
 
+    /** True while the prompt field has focus — LatinIME routes keys here instead of the app. */
+    fun isPromptFocused(): Boolean = promptFocused
+
+    /** Drop focus from the prompt field (panel hidden / keyboard dismissed). */
+    fun clearPromptFocus() {
+        promptFocused = false
+        promptEdit.clearFocus()
+        pendingHighSurrogate = null
+    }
+
+    /**
+     * Consume one key code from the IME's own keyboard while the prompt field is
+     * focused. Characters are inserted into the field, Enter submits, backspace
+     * deletes. Returns true if the event was handled here.
+     */
+    fun consumeKeyEvent(code: Int): Boolean {
+        if (!promptFocused) return false
+        return when (code) {
+            KeyCode.DELETE -> {
+                deleteLastChar()
+                true
+            }
+            KeyCode.SHIFT_ENTER, '\n'.code -> {
+                submitPrompt()
+                true
+            }
+            else -> if (code > 0) {
+                appendChar(code)
+                true
+            } else false
+        }
+    }
+
+    private fun appendChar(code: Int) {
+        val ch = code.toChar()
+        val pending = pendingHighSurrogate
+        when {
+            ch.isHighSurrogate() -> {
+                pendingHighSurrogate = ch
+                return
+            }
+            ch.isLowSurrogate() && pending != null -> {
+                pendingHighSurrogate = null
+                insertText("$pending$ch")
+            }
+            else -> {
+                pendingHighSurrogate = null
+                insertText(ch.toString())
+            }
+        }
+    }
+
+    private fun insertText(text: String) {
+        val editable = promptEdit.text ?: return
+        val start = promptEdit.selectionStart.coerceAtLeast(0)
+        val end = promptEdit.selectionEnd.coerceAtLeast(0)
+        val insertAt = if (start in 0..editable.length && end in 0..editable.length) minOf(start, end) else editable.length
+        editable.insert(insertAt, text)
+        promptEdit.setSelection(insertAt + text.length)
+    }
+
+    private fun deleteLastChar() {
+        val editable = promptEdit.text ?: return
+        val sel = promptEdit.selectionStart
+        val cursor = if (sel in 0 until editable.length) sel else editable.length
+        if (cursor <= 0) return
+        var start = cursor - 1
+        // delete a full surrogate pair (emoji) in one go
+        if (start > 0 && editable[start].isLowSurrogate() && editable[start - 1].isHighSurrogate()) start -= 1
+        editable.delete(start, cursor)
+        promptEdit.setSelection(start)
+    }
+
     private fun submitPrompt() {
         val text = promptEdit.text?.toString()?.trim().orEmpty()
         if (text.isEmpty()) return
         promptEdit.text?.clear()
+        pendingHighSurrogate = null
         onPromptSubmit?.invoke(text)
     }
 
