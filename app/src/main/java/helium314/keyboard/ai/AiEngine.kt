@@ -37,8 +37,14 @@ class AiEngine(private val context: Context) {
     private var lastOriginalCursor: Int = -1
     private var lastKeyCode: Int = -1
 
-    // Callback for UI state changes
+    // Current in-flight request (for cancel on second tap)
+    private var currentJob: Job? = null
+
+    // Callbacks for UI state changes (invoked on the main thread)
     var onProcessingStateChanged: ((Boolean) -> Unit)? = null
+
+    /** Progress 0..100 of the current request, posted to the main thread. */
+    var onProgress: ((Int) -> Unit)? = null
 
     /**
      * Map an AI ToolbarKey to its corresponding key code
@@ -75,11 +81,18 @@ class AiEngine(private val context: Context) {
      * Handle an AI key code. Called from LatinIME.onEvent() on main thread.
      * @return true if this was an AI key code (handled), false otherwise
      */
-    fun handleKeyCode(keyCode: Int, connection: InputConnection?): Boolean {
+    fun handleKeyCode(keyCode: Int, connection: InputConnection?, isPasswordField: Boolean = false): Boolean {
         if (!isAiKeyCode(keyCode)) return false
         if (connection == null) return true
 
         val presetType = keyCodeToPresetType(keyCode) ?: return true
+
+        // Sriboard: never send password field content to an AI API
+        if (isPasswordField) {
+            showToast("AI is blocked on password fields")
+            performHaptic(REJECT_HAPTIC)
+            return true
+        }
 
         // Check if AI is enabled
         val prefs = context.prefs()
@@ -89,14 +102,15 @@ class AiEngine(private val context: Context) {
             return true
         }
 
-        // Check if already processing
-        if (!isProcessing.compareAndSet(false, true)) {
-            // Second press = undo
-            handleUndo(connection, keyCode)
+        // Request in flight → second tap cancels it
+        if (isProcessing.get()) {
+            cancelCurrentRequest()
             return true
         }
 
-        // Second press while processing = cancel not supported (too complex), just ignore
+        if (!isProcessing.compareAndSet(false, true)) return true
+
+        // Same key pressed again with a previous result → undo toggle
         if (lastKeyCode == keyCode && lastOriginalText != null) {
             handleUndo(connection, keyCode)
             isProcessing.set(false)
@@ -137,17 +151,28 @@ class AiEngine(private val context: Context) {
 
         // Launch AI call on background thread
         showToast("AI processing…")
-        scope.launch {
+        currentJob = scope.launch {
+            val myJob = coroutineContext[Job]
             val result = withContext(Dispatchers.IO) {
                 val provider = AiPrefs.getProvider(context)
                 val apiKey = AiPrefs.getApiKey(context)
                 val model = AiPrefs.getModel(context)
                 val endpoint = AiPrefs.getEndpoint(context)
 
-                AiApiClient.generate(provider, apiKey, model, endpoint, prompt, fullText)
+                AiApiClient.generate(provider, apiKey, model, endpoint, prompt, fullText) { percent ->
+                    // progress arrives on the IO thread → forward on main
+                    handler.post { onProgress?.invoke(percent) }
+                }
+            }
+
+            // Discard if the user cancelled this request or a newer one superseded it —
+            // a stale coroutine must never touch shared state.
+            if (myJob == null || !myJob.isActive || currentJob !== myJob) {
+                return@launch
             }
 
             onProcessingStateChanged?.invoke(false)
+            onProgress?.invoke(100)
 
             if (result.success && result.text.isNotBlank()) {
                 // Replace the text via InputConnection
@@ -179,6 +204,25 @@ class AiEngine(private val context: Context) {
     }
 
     /**
+     * Cancel the in-flight AI request (second tap on an AI key while processing).
+     * The HTTP read itself is blocking and not interruptible — the result is simply
+     * discarded when it arrives, so the UI returns to idle immediately.
+     */
+    private fun cancelCurrentRequest() {
+        currentJob?.cancel()
+        currentJob = null
+        isProcessing.set(false)
+        // clear the undo slot so the next tap starts a fresh request instead of
+        // toggling undo on the never-committed original text
+        lastKeyCode = -1
+        lastOriginalText = null
+        lastOriginalCursor = -1
+        onProcessingStateChanged?.invoke(false)
+        performHaptic(REJECT_HAPTIC)
+        showToast("AI request cancelled")
+    }
+
+    /**
      * Undo the last AI replacement by restoring original text
      */
     private fun handleUndo(connection: InputConnection, keyCode: Int) {
@@ -200,6 +244,8 @@ class AiEngine(private val context: Context) {
     }
 
     fun destroy() {
+        currentJob?.cancel()
+        currentJob = null
         scope.cancel()
     }
 

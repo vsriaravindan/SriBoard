@@ -10,6 +10,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.core.content.edit
 import androidx.core.view.forEach
+import helium314.keyboard.ai.AiProgressDrawable
 import helium314.keyboard.event.HapticEvent
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
@@ -62,7 +63,61 @@ fun createToolbarKey(context: Context, key: ToolbarKey): ImageButton {
     } catch (_: Exception) {
         // never crash the keyboard because of a missing icon
     }
+    // Sriboard: keep a registry of live AI toolbar buttons so LatinIME can swap in
+    // the progress drawable while an AI request is running.
+    if (key.name.startsWith("AI_")) AiToolbarButtonRegistry.register(key, button)
     return button
+}
+
+/**
+ * Sriboard: live AI toolbar buttons (created by [createToolbarKey]).
+ * Used to show the in-key progress indicator while an AI request is in flight.
+ * Stale entries (buttons removed from a rebuilt toolbar) are harmless — they are
+ * detached views and simply won't render.
+ */
+object AiToolbarButtonRegistry {
+    private val buttons = mutableMapOf<ToolbarKey, ImageButton>()
+    private val progressDrawables = mutableMapOf<ToolbarKey, AiProgressDrawable>()
+
+    fun register(key: ToolbarKey, button: ImageButton) {
+        buttons[key] = button
+    }
+
+    fun setProcessing(processing: Boolean, percent: Int?) {
+        if (!processing) {
+            progressDrawables.values.forEach { it.stop() }
+            progressDrawables.clear()
+            buttons.forEach { (key, button) ->
+                try {
+                    button.setImageDrawable(KeyboardIconsSet.instance.getNewDrawable(key.name, button.context))
+                } catch (_: Exception) {
+                    // keep whatever is set — never crash over an icon
+                }
+            }
+            return
+        }
+        buttons.forEach { (key, button) ->
+            val drawable = progressDrawables.getOrPut(key) {
+                AiProgressDrawable(density = button.resources.displayMetrics.density).also { d -> button.setImageDrawable(d) }
+            }
+            drawable.update(percent)
+        }
+    }
+
+    fun clear() {
+        progressDrawables.values.forEach { it.stop() }
+        progressDrawables.clear()
+        buttons.clear()
+    }
+}
+
+/**
+ * Sriboard: switch AI toolbar buttons between the progress indicator and their
+ * normal icons. Called by LatinIME when an AI request starts/finishes.
+ * Must run on the main thread. [percent] null = indeterminate spinner.
+ */
+fun setAiToolbarProcessing(processing: Boolean, percent: Int? = null) {
+    AiToolbarButtonRegistry.setProcessing(processing, percent)
 }
 
 fun setToolbarButtonsActivatedStateOnPrefChange(buttonsGroup: ViewGroup, key: String?) {
@@ -235,6 +290,35 @@ fun enableAiToolbarKeys(prefs: SharedPreferences) {
 }
 
 private const val PREF_AI_TOOLBAR_MIGRATED = "ai_toolbar_keys_migrated"
+
+/** Sriboard: every AI toolbar key. */
+val allAiToolbarKeys = listOf(
+    ToolbarKey.AI_FIX,
+    ToolbarKey.AI_TRANSLATE_TAMIL,
+    ToolbarKey.AI_CUSTOM_1,
+    ToolbarKey.AI_CUSTOM_2,
+    ToolbarKey.AI_CUSTOM_3,
+    ToolbarKey.AI_CUSTOM_4,
+    ToolbarKey.AI_CUSTOM_5
+)
+
+/**
+ * Sriboard: idempotently enable ALL AI keys in the main toolbar. Called whenever
+ * AI is turned on with an API key (settings save, app start) so every AI feature
+ * becomes immediately accessible — no manual Settings → Toolbar dance needed.
+ * The user can still disable individual keys later.
+ */
+fun enableAllAiToolbarKeys(prefs: SharedPreferences) {
+    upgradeToolbarPref(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref)
+    allAiToolbarKeys.forEach { key ->
+        setToolbarKeyEnabled(prefs, Settings.PREF_TOOLBAR_KEYS, defaultToolbarPref, key, true)
+    }
+}
+
+/** Sriboard: AI is configured when the master switch is on and an API key exists. */
+fun isAiConfigured(prefs: SharedPreferences): Boolean =
+    prefs.getBoolean(Settings.PREF_AI_ENABLED, false)
+        && !(prefs.getString(Settings.PREF_AI_API_KEY, "") ?: "").isBlank()
 
 private fun setToolbarKeyEnabled(prefs: SharedPreferences, pref: String, default: String, key: ToolbarKey, enabled: Boolean) {
     val string = prefs.getString(pref, default)!!

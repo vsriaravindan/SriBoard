@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,7 +20,11 @@ import androidx.compose.ui.unit.dp
 import android.widget.Toast
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.latin.utils.enableAllAiToolbarKeys
 import helium314.keyboard.latin.utils.prefs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * AI Settings screen — manage provider, API key, presets.
@@ -41,6 +46,8 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
     val enabled = remember { mutableStateOf(prefs.getBoolean(Settings.PREF_AI_ENABLED, false)) }
     var presets by remember { mutableStateOf(AiPresetManager.getPresets(context)) }
     var apiKeyVisible by remember { mutableStateOf(false) }
+    var testing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     fun saveAll() {
         prefs.edit()
@@ -51,7 +58,14 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
             .putBoolean(Settings.PREF_AI_ENABLED, enabled.value)
             .apply()
         AiPresetManager.savePresets(context, presets)
-        Toast.makeText(context, "AI settings saved", Toast.LENGTH_SHORT).show()
+        // Sriboard: when AI is turned on with an API key, enable ALL AI toolbar keys
+        // automatically — no manual Settings → Toolbar trip needed.
+        if (enabled.value && apiKey.value.trim().isNotBlank()) {
+            enableAllAiToolbarKeys(context.prefs())
+            Toast.makeText(context, "AI settings saved — all AI toolbar keys enabled", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "AI settings saved", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Scaffold(
@@ -175,6 +189,36 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
                 Text("Save AI Settings")
             }
 
+            // Test connection
+            Button(
+                onClick = {
+                    val key = apiKey.value.trim()
+                    if (key.isBlank()) {
+                        Toast.makeText(context, "Enter an API key first", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    testing = true
+                    scope.launch {
+                        val result = withContext(Dispatchers.IO) {
+                            AiApiClient.testConnection(
+                                currentProvider.value,
+                                key,
+                                model.value.trim(),
+                                endpoint.value.trim()
+                            )
+                        }
+                        testing = false
+                        val msg = if (result.success) "✓ Connection OK — API responded"
+                        else "✗ ${result.errorMessage}"
+                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                    }
+                },
+                enabled = !testing,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            ) {
+                Text(if (testing) "Testing connection…" else "Test Connection")
+            }
+
             HorizontalDivider()
             Text("Presets", style = MaterialTheme.typography.titleSmall)
             Text(
@@ -233,16 +277,7 @@ private fun AiPresetCard(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit
 ) {
-    val displayName = try {
-        val type = AiPrefs.PresetType.valueOf(preset.type)
-        when (type) {
-            AiPrefs.PresetType.FIX -> "Fix (English)"
-            AiPrefs.PresetType.TRANSLATE_TAMIL -> "Translate to Tamil"
-            else -> "Custom ${type.ordinal - 1}"
-        }
-    } catch (_: Exception) {
-        preset.type
-    }
+    val displayName = AiPresetManager.displayName(preset)
 
     Card(
         modifier = Modifier.fillMaxWidth(),

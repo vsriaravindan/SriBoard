@@ -28,29 +28,64 @@ object AiApiClient {
     /**
      * Call the configured AI provider with [prompt] and [text].
      * The API key is read from SharedPreferences and sent ONLY to the provider's endpoint.
+     * [onProgress] is called from the caller's thread with a 0..100 percentage when the
+     * response Content-Length is known (null means indeterminate — no callback for it).
      */
-    fun generate(provider: Provider, apiKey: String, model: String, endpoint: String, prompt: String, text: String): AiResult {
+    fun generate(
+        provider: Provider,
+        apiKey: String,
+        model: String,
+        endpoint: String,
+        prompt: String,
+        text: String,
+        onProgress: ((Int) -> Unit)? = null
+    ): AiResult {
         if (apiKey.isBlank()) {
             return AiResult(false, errorMessage = "API key not configured")
         }
 
         return when (provider) {
-            Provider.GOOGLE_AI -> callGemini(apiKey, model, prompt, text)
-            else -> callOpenAICompatible(provider, apiKey, model, endpoint, prompt, text)
+            Provider.GOOGLE_AI -> callGemini(apiKey, model, prompt, text, onProgress)
+            else -> callOpenAICompatible(provider, apiKey, model, endpoint, prompt, text, onProgress)
+        }
+    }
+
+    /**
+     * Quick connectivity + credentials check against the configured provider.
+     * Sends a tiny request and returns the provider's reply (or an error).
+     */
+    fun testConnection(provider: Provider, apiKey: String, model: String, endpoint: String): AiResult {
+        if (apiKey.isBlank()) {
+            return AiResult(false, errorMessage = "API key not configured")
+        }
+        return when (provider) {
+            Provider.GOOGLE_AI -> callGemini(apiKey, model, "Reply with the single word: OK", "ping", timeoutMs = 20_000)
+            else -> callOpenAICompatible(
+                provider, apiKey, model, endpoint,
+                "Reply with the single word: OK", "ping",
+                timeoutMs = 20_000
+            )
         }
     }
 
     /**
      * Google AI Gemini API — key goes in URL query param
      */
-    private fun callGemini(apiKey: String, model: String, prompt: String, text: String): AiResult {
+    private fun callGemini(
+        apiKey: String,
+        model: String,
+        prompt: String,
+        text: String,
+        onProgress: ((Int) -> Unit)? = null,
+        timeoutMs: Int = TIMEOUT_MS
+    ): AiResult {
         return try {
             val url = URL("https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=$apiKey")
             val conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
-            conn.connectTimeout = TIMEOUT_MS
-            conn.readTimeout = TIMEOUT_MS
+            conn.connectTimeout = timeoutMs
+            conn.readTimeout = timeoutMs
             conn.doOutput = true
 
             val requestBody = buildGeminiRequest(prompt, text)
@@ -61,7 +96,10 @@ object AiApiClient {
 
             val responseCode = conn.responseCode
             val responseBody = if (responseCode in 200..299) {
-                BufferedReader(InputStreamReader(conn.inputStream)).readText()
+                conn.inputStream.readBodyWithProgress(
+                    onProgress,
+                    conn.contentLengthLong.takeIf { it > 0 }?.toInt()
+                )
             } else {
                 val err = BufferedReader(InputStreamReader(conn.errorStream)).readText()
                 return AiResult(false, errorMessage = parseGeminiError(err, responseCode))
@@ -117,7 +155,9 @@ object AiApiClient {
         model: String,
         endpoint: String,
         prompt: String,
-        text: String
+        text: String,
+        onProgress: ((Int) -> Unit)? = null,
+        timeoutMs: Int = TIMEOUT_MS
     ): AiResult {
         val baseUrl = if (endpoint.isBlank()) provider.defaultEndpoint() else endpoint
         if (baseUrl.isBlank()) {
@@ -130,8 +170,8 @@ object AiApiClient {
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Authorization", "Bearer $apiKey")
-            conn.connectTimeout = TIMEOUT_MS
-            conn.readTimeout = TIMEOUT_MS
+            conn.connectTimeout = timeoutMs
+            conn.readTimeout = timeoutMs
             conn.doOutput = true
 
             val requestBody = buildOpenAiRequest(model, prompt, text)
@@ -142,7 +182,10 @@ object AiApiClient {
 
             val responseCode = conn.responseCode
             val responseBody = if (responseCode in 200..299) {
-                BufferedReader(InputStreamReader(conn.inputStream)).readText()
+                conn.inputStream.readBodyWithProgress(
+                    onProgress,
+                    conn.contentLengthLong.takeIf { it > 0 }?.toInt()
+                )
             } else {
                 val err = BufferedReader(InputStreamReader(conn.errorStream)).readText()
                 return AiResult(false, errorMessage = parseOpenAiError(err, responseCode))
@@ -186,6 +229,35 @@ object AiApiClient {
     }
 
     // --- Minimal JSON helpers (no dependency needed) ---
+
+    /**
+     * Reads the full body while reporting download progress (0..100) when [totalBytes]
+     * is known (from Content-Length). Without it, reads without progress reporting.
+     */
+    private fun java.io.InputStream.readBodyWithProgress(
+        onProgress: ((Int) -> Unit)?,
+        totalBytes: Int?
+    ): String {
+        if (onProgress == null || totalBytes == null) return BufferedReader(InputStreamReader(this)).readText()
+        val reader = BufferedReader(InputStreamReader(this))
+        val sb = StringBuilder()
+        val buf = CharArray(8192)
+        var read = 0
+        var reported = 0
+        while (true) {
+            val n = reader.read(buf)
+            if (n <= 0) break
+            sb.append(buf, 0, n)
+            read += n
+            val pct = (read * 100 / totalBytes).coerceIn(0, 100)
+            if (pct > reported) {
+                reported = pct
+                onProgress(pct)
+            }
+        }
+        onProgress(100)
+        return sb.toString()
+    }
 
     private fun escapeJson(s: String): String {
         return s.replace("\\", "\\\\")

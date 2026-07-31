@@ -1,6 +1,6 @@
 ================================================================================
  SRIBOARD — FULL PROJECT HANDOFF (for future sessions)
- Written: 2026-07-31 | Status: v1.4 WORKING (AI Fix confirmed by user)
+ Written: 2026-07-31 | Status: v1.5 WORKING (v1.4 AI Fix confirmed by user)
 ================================================================================
 
 --------------------------------------------------------------------------------
@@ -21,8 +21,11 @@ back through commitText() — all inside the keyboard process.
 - SwiftSlate:   C:\Users\vrsri\scratch\swiftslate   (reference for AI fix concepts)
 - GitHub repo:  https://github.com/vsriaravindan/SriBoard  (branch: main)
 - Releases:     https://github.com/vsriaravindan/SriBoard/releases
-  Latest: v1.4  ->  Sriboard-v1.4-release.apk (signed with debug key, all ABIs)
+  Latest: v1.5  ->  Sriboard-v1.5-release.apk (signed with debug key, all ABIs)
 - APK build output: app/build/outputs/apk/release/Sriboard_4.0-dev1-release.apk
+- Gesture lib bundled: app/src/main/jniLibs/arm64-v8a/libjni_latinimegoogle.so
+  (user's custom lib; sha256 b1049983... = EXACTLY JniUtils.CHECKSUM_ARM64,
+  i.e. the official Google arm64 gesture lib — loads via JniUtils fallback)
 - Debug keystore: C:\Users\vrsri\.android\debug.keystore (android/android)
   (release build type is configured to sign with the debug key)
 
@@ -103,8 +106,9 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
  11. settings/SettingsNavHost.kt             — AiSettings route
  12. settings/screens/MainSettingsScreen.kt  — AI menu entry + callback param
 
-  NEW: app/src/main/java/helium314/keyboard/ai/*.kt  (5 files)
+  NEW: app/src/main/java/helium314/keyboard/ai/*.kt  (6 files: + AiProgressDrawable.kt)
   NEW: app/src/main/res/drawable/ic_ai_{fix,translate,custom}.xml (3 files)
+  NEW: app/src/main/jniLibs/arm64-v8a/libjni_latinimegoogle.so (bundled gesture lib)
 
 --------------------------------------------------------------------------------
  6. BUGS FOUND & FIXED (chronological — learn from these!)
@@ -153,6 +157,24 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
              to a privacy-focused fork; toasts from an IME are hidden behind
              the keyboard — always use TOP gravity.
 
+ B7. [v1.5] Build errors on new code (2 rounds)
+     a) ToolbarUtils: top-level fn could not access AiToolbarButtonRegistry's
+        PRIVATE maps -> moved logic into object method setProcessing().
+     b) AiProgressDrawable: Drawable.resources unresolved in this project's
+        Kotlin setup -> pass density explicitly at construction
+        (AiProgressDrawable(density = button.resources.displayMetrics.density)).
+     LESSON: Kotlin object members are private to the object, not the file;
+             don't rely on Drawable.resources in this codebase.
+
+ B8. [v1.5] Cancel-race in AiEngine (found by code review, fixed pre-release)
+     Cause: a cancelled request's coroutine could finish its blocking HTTP read
+            AFTER a newer request started, then reset isProcessing=false while
+            the new request was still in flight (double-request/undo bugs).
+     Fix:   job-identity guard — the coroutine captures myJob = coroutineContext[Job]
+            and only touches state if currentJob === myJob; stale coroutines
+            return without touching anything. cancelCurrentRequest() also clears
+            the undo slot so the next tap starts fresh.
+
 --------------------------------------------------------------------------------
  7. API KEY SECURITY MODEL
 --------------------------------------------------------------------------------
@@ -181,17 +203,26 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
 --------------------------------------------------------------------------------
  9. KNOWN LIMITATIONS / IDEAS FOR NEXT SESSION
 --------------------------------------------------------------------------------
+- Percentage is byte-download progress (Content-Length), so short responses jump
+  0→100 quickly; true incremental % needs SSE streaming (bigger change).
 - No visible progress indicator ON the key itself (only a toast). Could spin
-  the ⚡ icon via onProcessingStateChanged -> LatinIME wiring.
+  the ⚡ icon via onProcessingStateChanged -> LatinIME wiring.   [DONE v1.5]
 - Text replacement: deletes text BEFORE cursor (up to 4000 chars) + selection,
   then commits result. Text AFTER cursor is preserved but the cursor jumps to
   end of committed text — minor UX edge case.
 - Undo is single-level, toggles original<->result, per text field.
-- No per-provider "test connection" button in settings yet.
+- No per-provider "test connection" button in settings yet.      [DONE v1.5]
 - Password fields are NOT explicitly blocked — InputConnection still works,
   but consider checking EditorInfo inputType for TYPE_TEXT_VARIATION_PASSWORD.
+                                                                   [DONE v1.5]
 - Custom presets have no custom ICON (all share ic_ai_custom); fine for now.
 - Toast "AI processing…" + result toast queue back-to-back (LENGTH_LONG each).
+- Second tap cancels the in-flight request; HTTP read itself is not
+  interruptible — the result is discarded, request completes in background.
+                                                                   [DONE v1.5]
+- Gesture typing: bundled google lib is arm64-v8a ONLY; other ABIs fall back
+  to the built-in lib (by design). If the user's phone is NOT arm64, gesture
+  model is the stock one.                                          [DONE v1.5]
 
 --------------------------------------------------------------------------------
  10. RELEASE HISTORY (GitHub releases)
@@ -201,6 +232,9 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
  v1.2 dcc58a5  keyboard crash fix (icon id 0) + real AI icons
  v1.3 782a6b5  AI Fix tap fix (reversed IntRange)
  v1.4 a99d293  INTERNET permission + visible status toasts  <<< CONFIRMED WORKING
+ v1.5 <pending>  progress indicator +% on AI keys, seeded presets (3 auto-filled),
+                auto-enable ALL AI toolbar keys on save, bundled Google gesture
+                lib (arm64), password-field block, cancel on 2nd tap, test button
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)

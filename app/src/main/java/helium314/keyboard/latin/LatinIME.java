@@ -556,6 +556,15 @@ public class LatinIME extends InputMethodService implements
         mHandler.onCreate();
         // Sriboard AI engine
         mAiEngine = new AiEngine(this);
+        // Sriboard: show the progress indicator on AI toolbar keys while a request runs
+        mAiEngine.setOnProcessingStateChanged(processing -> {
+            helium314.keyboard.latin.utils.ToolbarUtilsKt.setAiToolbarProcessing(processing, null);
+            return Unit.INSTANCE;
+        });
+        mAiEngine.setOnProgress(percent -> {
+            helium314.keyboard.latin.utils.ToolbarUtilsKt.setAiToolbarProcessing(true, percent);
+            return Unit.INSTANCE;
+        });
         if (FoldableUtils.INSTANCE.isFoldable())
             foldableObserver = new FoldableUtils.FoldableObserver(this);
 
@@ -1423,7 +1432,14 @@ public class LatinIME extends InputMethodService implements
         // Sriboard AI: handle AI key codes
         final int keyCode = event.getKeyCode();
         if (mAiEngine != null && AiEngine.Companion.isAiKeyCode(keyCode)) {
-            mAiEngine.handleKeyCode(keyCode, getCurrentInputConnection());
+            // never send password field content to an AI API
+            final EditorInfo editorInfo = getCurrentInputEditorInfo();
+            final int inputType = editorInfo != null ? editorInfo.inputType : 0;
+            final int variation = inputType & 0xff0; // class + variation bits
+            final boolean isPasswordField = variation == EditorInfo.TYPE_TEXT_VARIATION_PASSWORD
+                    || variation == EditorInfo.TYPE_TEXT_VARIATION_WEB_PASSWORD
+                    || variation == EditorInfo.TYPE_NUMBER_VARIATION_PASSWORD;
+            mAiEngine.handleKeyCode(keyCode, getCurrentInputConnection(), isPasswordField);
             return;
         }
         final InputTransaction completeInputTransaction =
