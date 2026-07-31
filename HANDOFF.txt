@@ -252,6 +252,14 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 STUCK-% FIX: final onProgress(100) after icon restore was
                 re-creating the progress drawable — removed; engine refactored
                 to shared runRequest() (ONE generate() call per tap)
+ v1.8 cc968b1  PANEL TOUCH FIX: onComputeInsets touchableRegion did NOT include
+                the panel (it sits above strip+keyboard) -> taps passed through
+                to the app; fixed by subtracting panel height from visibleTopY.
+                DISTINCT ICONS: ic_ai_custom=pencil, ic_ai_rewrite=brush,
+                ic_ai_shorten=scissors, ic_ai_translate_en=globe, ic_ai_menu=
+                apps-grid (3 icon maps). PRESET->TOOLBAR SYNC: syncPresetToolbar-
+                Keys() enables a preset's toolbar key on Save; AI_MENU gated on
+                PREF_AI_ENABLED (setAiMenuKeyEnabled) in App + settings save.
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)
