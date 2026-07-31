@@ -106,7 +106,8 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
  11. settings/SettingsNavHost.kt             — AiSettings route
  12. settings/screens/MainSettingsScreen.kt  — AI menu entry + callback param
 
-  NEW: app/src/main/java/helium314/keyboard/ai/*.kt  (6 files: + AiProgressDrawable.kt)
+  NEW: app/src/main/java/helium314/keyboard/ai/*.kt  (8 files: + AiProgressDrawable.kt,
+       + AiQuickPanelView.kt — chips + prompt bar + status row, classic View)
   NEW: app/src/main/res/drawable/ic_ai_{fix,translate,custom}.xml (3 files)
   NEW: app/src/main/jniLibs/arm64-v8a/libjni_latinimegoogle.so (bundled gesture lib)
 
@@ -244,6 +245,13 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
  v1.6 156c360  PROGRESS FIX: ring fills whole key (FIT_XY), spinner runs entire
                 request (0/100 keep spinning; 1..99 show %), removed 2nd-tap
                 toggle-undo (every tap processes; toolbar UNDO key reverts)
+ v1.7 05849de  AI QUICK PANEL: new AI_MENU key (-11008) toggles chips row +
+                custom prompt bar above keyboard (AiQuickPanelView, in
+                main_keyboard_frame.xml); chips = enabled presets by name;
+                @JvmOverloads on runPreset/runPrompt for Java callers;
+                STUCK-% FIX: final onProgress(100) after icon restore was
+                re-creating the progress drawable — removed; engine refactored
+                to shared runRequest() (ONE generate() call per tap)
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)
