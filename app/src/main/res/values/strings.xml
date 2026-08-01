@@ -697,6 +697,11 @@ New dictionary:
     <string name="user_dict_word_already_present">This word is already present in the %s user dictionary. Please type another one.</string>
     <!-- User dictionary settings. Text button to add a word -->
     <string name="user_dict_add_word_button">Add a word</string>
+    <string name="user_dict_bulk_import_button">Bulk import</string>
+    <string name="user_dict_bulk_import_title">Bulk import words</string>
+    <string name="user_dict_bulk_import_hint">Paste one word per line. Optionally add a shortcut separated by a tab or comma:\nword\tShortcut\nword2</string>
+    <string name="user_dict_bulk_import_done">Imported %d words (%d skipped as duplicates)</string>
+    <string name="user_dict_bulk_import_empty">Nothing to import — paste at least one word</string>
     <!-- Option for choosing theme style -->
     <string name="theme_style">Style</string>
     <!-- Option for choosing icon style (same options as theme_style) -->

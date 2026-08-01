@@ -1,0 +1,261 @@
+# Typo shortcuts: CORRECT<TAB>TYPO  (typing the typo auto-corrects to the correct word)
+aagala
+aagum
+about	abou
+about	abt
+above	abve
+actually	actualy
+again	agin
+against	aganst
+akka
+already	allready
+also	alos
+always	allways
+amma
+anga
+anna
+anna da
+appa
+avanga
+avangal
+because	bcz
+because	becasue
+because	becuase
+before	b4
+before	befor
+being	beign
+believe	beleive
+better	beter
+between	beetween
+came	com
+can't	cant
+cause	cuase
+change	chage
+coming	comming
+could	coud
+couldn't	couldnt
+definitely	definately
+different	diffrent
+doesn't	doesnt
+don't	dont
+edutha
+eduthu
+eduthu kodu
+enakku
+enga
+enga da
+enga irukka
+engala
+enge
+enna
+enna da
+ennaku
+enough	enought
+epdi
+eppadi
+eppo
+every	everry
+example	exmaple
+experience	experiance
+friend	freind
+friends	freinds
+getting	geting
+going	gonig
+great	gr8
+happened	happend
+have	hve
+having	haveing
+illa
+illai
+immediately	imediately
+important	importent
+inga
+instead	insted
+interesting	intersting
+irruken
+iruken
+irukka
+irukku
+irukkum
+irundha
+just	jus
+kekka
+kekkunga
+kettu
+know	knw
+konjam
+konjam wait
+kudutha
+kuduthu
+kuduthu vitru
+later	latr
+little	littel
+look	lok
+macha
+machan
+made	mde
+mattum
+maybe	mabey
+might	mit
+morning	mornig
+much	mch
+mudila
+mudiyala
+mudiyum
+naanga
+naangal
+nalla
+nalla irukka
+nallaa
+namba
+namma
+nandri
+nanri
+never	nevr
+nothing	nothingg
+now	noww
+of	fo
+often	offen
+ok da
+only	onli
+ooru
+other	othr
+paakunga
+paathaa
+paathen
+paathu
+paati
+padicha
+padichen
+padichu
+padippu
+panna
+panniten
+pannitu
+pannra
+pannu
+pannunga
+pattu
+people	ppl
+please	pls
+please	plz
+pochu
+poda
+podi
+poiden
+poitten
+poitu
+ponga
+poonga
+poren
+possible	posible
+pretty	prety
+probably	probly
+really	realy
+receive	recieve
+remember	remeber
+romba
+romba nalla
+saapadu
+saapdu
+saapta
+saapte
+said	siad
+sapadu
+sappadu
+sapten
+sari
+sari da
+school	shcool
+seri
+should	shoud
+should	shoudl
+shouldn't	shouldnt
+solli kodu
+sollu
+sollunga
+solluven
+solra
+something	somthing
+sometimes	sometime
+sorry	sry
+still	stel
+story	stroy
+such	suc
+sutta
+taking	takng
+tanni
+thala
+thambi
+thambi da
+thangachi
+thanks	thanx
+thanks	thx
+thanni
+that	taht
+thatha
+their	thier
+there	ther
+therila
+theriyala
+they're	theyre
+thing	thign
+think	thik
+thought	thoght
+through	thru
+time	tme
+tonight	tonite
+took	tok
+trying	tryig
+unakku
+unaku
+unga
+ungala
+ungaluku
+until	untill
+vaadi
+vaanga
+vachi
+vachu
+vada
+vanakkam
+vandha
+vandhen
+vandhu
+vandhuchu
+vandhutu
+vandu
+vanga
+varanga
+varen
+varuva
+veedu
+veetla
+vela
+velai
+venam
+vendam
+venum
+very	veyr
+vitla
+wait pannu
+want	wnat
+wanted	wated
+was	waas
+wasn't	wasnt
+went	wentt
+we're	weare
+were	wer
+what	wat
+what	wut
+when	wen
+where	were
+which	wich
+with	wiht
+without	witht
+won't	wont
+wouldn't	wouldnt
+yaar
+yaaru
+you	u
+your	yr

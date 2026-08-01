@@ -1,0 +1,154 @@
+# Thanglish (Tamil in English script) common words — plain entries, no shortcut
+# So the keyboard accepts/suggests them instead of auto-correcting to English
+vanakkam
+nanri
+nandri
+enna
+eppadi
+epdi
+eppadi
+enge
+enga
+eppo
+yaaru
+yaar
+enakku
+ennaku
+unakku
+unaku
+avanga
+avangal
+naanga
+naangal
+namma
+namba
+inga
+anga
+sari
+seri
+romba
+konjam
+mattum
+nalla
+nallaa
+sapadu
+saapadu
+sappadu
+tanni
+thanni
+appa
+amma
+anna
+akka
+thambi
+thangachi
+paati
+thatha
+veedu
+veetla
+vitla
+ooru
+vela
+velai
+padippu
+padichu
+padicha
+pochu
+pochu
+vandha
+vandhu
+vandhuchu
+sollu
+sollunga
+kekka
+kettu
+paathu
+paathaa
+pannu
+pannunga
+panna
+saapdu
+saapta
+saapte
+kudutha
+kuduthu
+edutha
+eduthu
+vachu
+vachi
+irukka
+irukku
+irukkum
+irundha
+illa
+illai
+theriyala
+therila
+mudiyala
+mudila
+mudiyum
+venum
+venam
+vendam
+aagum
+aagala
+solra
+sollu
+pannra
+pannitu
+poitu
+vandu
+varanga
+varuva
+varen
+poren
+poitten
+poiden
+vandhen
+sapten
+panniten
+padichen
+paathen
+solluven
+irruken
+iruken
+enga da
+enna da
+sari da
+ok da
+poda
+podi
+vada
+vaadi
+pattu
+sutta
+thala
+macha
+machan
+anna da
+thambi da
+unga
+ungala
+engala
+ungaluku
+vanga
+vaanga
+ponga
+poonga
+sollunga
+kekkunga
+paakunga
+pannunga
+saapdu
+vandhutu
+pochu
+poren
+vaanga
+enga irukka
+nalla irukka
+romba nalla
+konjam wait
+wait pannu
+solli kodu
+eduthu kodu
+kuduthu vitru

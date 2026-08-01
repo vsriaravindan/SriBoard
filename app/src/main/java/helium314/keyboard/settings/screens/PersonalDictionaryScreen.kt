@@ -5,11 +5,13 @@ import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.provider.UserDictionary
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -87,13 +89,93 @@ fun PersonalDictionaryScreen(
     if (selectedWord != null) {
         EditWordDialog(selectedWord!!, locale) { selectedWord = null }
     }
-    ExtendedFloatingActionButton(
-        onClick = { selectedWord = Word("", null, null) },
-        text = { Text(stringResource(R.string.user_dict_add_word_button)) },
-        icon = { Icon(painter = painterResource(R.drawable.ic_edit), stringResource(R.string.user_dict_add_word_button)) },
-        modifier = Modifier.wrapContentSize(Alignment.BottomEnd).padding(all = 12.dp)
-            .then(Modifier.safeDrawingPadding())
+    var showBulkImport by remember { mutableStateOf(false) }
+    if (showBulkImport) {
+        BulkImportDialog { showBulkImport = false }
+    }
+    Column(
+        modifier = Modifier.fillMaxWidth().wrapContentSize(Alignment.BottomEnd).padding(all = 12.dp)
+            .then(Modifier.safeDrawingPadding()),
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ExtendedFloatingActionButton(
+            onClick = { showBulkImport = true },
+            text = { Text(stringResource(R.string.user_dict_bulk_import_button)) },
+            icon = { Icon(painterResource(R.drawable.ic_edit), stringResource(R.string.user_dict_bulk_import_button)) }
+        )
+        ExtendedFloatingActionButton(
+            onClick = { selectedWord = Word("", null, null) },
+            text = { Text(stringResource(R.string.user_dict_add_word_button)) },
+            icon = { Icon(painter = painterResource(R.drawable.ic_edit), stringResource(R.string.user_dict_add_word_button)) }
+        )
+    }
+}
+
+@Composable
+private fun BulkImportDialog(onDismissRequest: () -> Unit) {
+    val ctx = LocalContext.current
+    var newText by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        // if a seed file exists in the app's files dir (e.g. pushed via adb), preload it
+        val seedFile = java.io.File(ctx.filesDir, "bulk_words.txt")
+        if (seedFile.exists() && newText.isBlank())
+            newText = seedFile.readText()
+    }
+    ThreeButtonAlertDialog(
+        onDismissRequest = onDismissRequest,
+        onConfirmed = {
+            val (imported, skipped) = bulkImportWords(newText, ctx)
+            if (imported + skipped > 0)
+                Toast.makeText(ctx, ctx.getString(R.string.user_dict_bulk_import_done, imported, skipped), Toast.LENGTH_LONG).show()
+            else
+                Toast.makeText(ctx, ctx.getString(R.string.user_dict_bulk_import_empty), Toast.LENGTH_SHORT).show()
+            onDismissRequest()
+        },
+        checkOk = { newText.isNotBlank() },
+        title = { Text(stringResource(R.string.user_dict_bulk_import_title)) },
+        content = {
+            TextField(
+                value = newText,
+                onValueChange = { newText = it },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp),
+                label = { Text(stringResource(R.string.user_dict_bulk_import_hint)) },
+                singleLine = false
+            )
+        }
     )
+}
+
+/** Parses "word" or "word\tshortcut" or "word,shortcut" lines and inserts them into the UserDictionary (all locales). */
+private fun bulkImportWords(text: String, context: Context): Pair<Int, Int> {
+    val resolver = context.contentResolver
+    // existing words across ALL locales (the provider scopes by app id, so this is our own dictionary)
+    val existingWords = HashSet<String>()
+    resolver.query(UserDictionary.Words.CONTENT_URI, arrayOf(UserDictionary.Words.WORD), null, null, null)?.use { cursor ->
+        while (cursor.moveToNext())
+            existingWords.add(cursor.getString(0))
+    }
+    var imported = 0
+    var skipped = 0
+    text.lineSequence().forEach { line ->
+        val trimmed = line.trim()
+        if (trimmed.isEmpty()) return@forEach
+        val (wordPart, shortcutPart) = if (trimmed.contains('\t')) {
+            val parts = trimmed.split('\t', limit = 2)
+            parts[0].trim() to parts.getOrNull(1)?.trim()
+        } else if (trimmed.contains(',')) {
+            val parts = trimmed.split(',', limit = 2)
+            parts[0].trim() to parts.getOrNull(1)?.trim()
+        } else {
+            trimmed to null
+        }
+        if (wordPart.isEmpty()) return@forEach
+        if (wordPart in existingWords) { skipped++; return@forEach }
+        UserDictionary.Words.addWord(context, wordPart, WEIGHT_FOR_USER_DICTIONARY_ADDS, shortcutPart?.takeIf { it.isNotEmpty() }, null)
+        existingWords.add(wordPart)
+        imported++
+    }
+    return imported to skipped
 }
 
 @Composable
