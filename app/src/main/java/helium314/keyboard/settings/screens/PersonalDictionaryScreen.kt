@@ -116,11 +116,15 @@ fun PersonalDictionaryScreen(
 private fun BulkImportDialog(onDismissRequest: () -> Unit) {
     val ctx = LocalContext.current
     var newText by remember { mutableStateOf("") }
+    var confirmLoad by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         // if a seed file exists in the app's files dir (e.g. pushed via adb), preload it
         val seedFile = java.io.File(ctx.filesDir, "bulk_words.txt")
         if (seedFile.exists() && newText.isBlank())
             newText = seedFile.readText()
+    }
+    fun loadExample() {
+        newText = ctx.assets.open("bulk_words.txt").bufferedReader().readText()
     }
     ThreeButtonAlertDialog(
         onDismissRequest = onDismissRequest,
@@ -142,8 +146,20 @@ private fun BulkImportDialog(onDismissRequest: () -> Unit) {
                 label = { Text(stringResource(R.string.user_dict_bulk_import_hint)) },
                 singleLine = false
             )
+        },
+        neutralButtonText = stringResource(R.string.user_dict_bulk_load_example),
+        onNeutral = {
+            if (newText.isNotBlank()) confirmLoad = true
+            else loadExample()
         }
     )
+    if (confirmLoad) {
+        ThreeButtonAlertDialog(
+            onDismissRequest = { confirmLoad = false },
+            onConfirmed = { confirmLoad = false; loadExample() },
+            title = { Text(stringResource(R.string.user_dict_bulk_load_example_confirm)) }
+        )
+    }
 }
 
 /** Parses "word" or "word\tshortcut" or "word,shortcut" lines and inserts them into the UserDictionary (all locales). */

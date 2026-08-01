@@ -702,6 +702,8 @@ New dictionary:
     <string name="user_dict_bulk_import_hint">Paste one word per line. Optionally add a shortcut separated by a tab or comma:\nword\tShortcut\nword2</string>
     <string name="user_dict_bulk_import_done">Imported %d words (%d skipped as duplicates)</string>
     <string name="user_dict_bulk_import_empty">Nothing to import — paste at least one word</string>
+    <string name="user_dict_bulk_load_example">Load example list</string>
+    <string name="user_dict_bulk_load_example_confirm">Replace the current text with the built-in example list (typo shortcuts + common Thanglish words)?</string>
     <!-- Option for choosing theme style -->
     <string name="theme_style">Style</string>
     <!-- Option for choosing icon style (same options as theme_style) -->
