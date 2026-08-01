@@ -267,6 +267,23 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 DEL(-7) backspaces, ENTER('\n')/SHIFT_ENTER submit. clearPrompt-
                 Focus() on hide/dismiss. CUSTOM PROMPTS: runPrompt() appends
                 "\nReturn ONLY the output, nothing else." before sending.
+ v2.0 53f03ee  BULK IMPORT for personal dictionary (Settings -> Text correction ->
+                Personal dictionary -> Bulk import button): paste lines
+                word<TAB>shortcut (or word,shortcut / plain word); inserts via
+                UserDictionary.Words.addWord(weight=250, locale=NULL = all
+                languages); dupes skipped + toast count. Seed file
+                filesDir/bulk_words.txt preloads the dialog if present (dev
+                seeding via adb run-as — requires debuggable build).
+                ac62fd8: seed lists cleaned (no comment lines; removed 11
+                shortcut entries that would hijack real words: hear->here,
+                wood->would, form->from, yo->you're, com->come, rite->right,
+                ok->okay, ans->answer, tom->tomorrow, tod->today, yer->year).
+                FINAL v2.0 release: isDebuggable flipped BACK to false —
+                debuggable builds get testOnly='-1' (install refuses for new
+                users; adb install -t only). Bulk import works on any build.
+                CRITICAL LESSON: only enable debuggable temporarily for
+                run-as seeding; NEVER ship it. v2.0 release APK is clean
+                (all 4 ABIs, no testOnly, debug-signed).
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)
