@@ -1,4 +1,3 @@
-# Typo shortcuts: CORRECT<TAB>TYPO  (typing the typo auto-corrects to the correct word)
 aagala
 aagum
 about	abou
