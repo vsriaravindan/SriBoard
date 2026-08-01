@@ -284,6 +284,12 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 CRITICAL LESSON: only enable debuggable temporarily for
                 run-as seeding; NEVER ship it. v2.0 release APK is clean
                 (all 4 ABIs, no testOnly, debug-signed).
+ v2.1 57d40ed  EXAMPLE LIST BUNDLED: app/src/main/assets/bulk_words.txt
+                (260 lines: 117 typo shortcuts + 144 Thanglish). BulkImportDialog
+                gets a "Load example list" neutral button -> loads asset into
+                the field (confirm dialog first if text present). Every user
+                can now one-tap fill + import; no ADB needed. NEW USER FLOW:
+                install -> Bulk import -> Load example list -> OK.
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)
