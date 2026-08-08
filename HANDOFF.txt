@@ -313,7 +313,7 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 bullets, links, blockquotes to plain text BEFORE commitText, so
                 the app never sees the markers. IMEs cannot apply rich
                 formatting inside other apps — plain-text conversion is the max.
- v2.3 <fill>   LONG AI OUTPUT NEWLINES FIX: AiApiClient.extractJsonStringValue
+ v2.3 e9f1136  LONG AI OUTPUT NEWLINES FIX: AiApiClient.extractJsonStringValue
                 was NOT decoding JSON escape sequences — "\n" in the API's JSON
                 arrived as a literal 'n' (backslash stripped, char kept), so
                 every newline in long answers pasted as "n" and blank lines as
