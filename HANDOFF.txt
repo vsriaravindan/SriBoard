@@ -291,7 +291,7 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 the field (confirm dialog first if text present). Every user
                 can now one-tap fill + import; no ADB needed. NEW USER FLOW:
                 install -> Bulk import -> Load example list -> OK.
- v2.2 <fill>   GBOARD MODE (Settings -> Preferences -> "Gboard mode", default ON):
+ v2.2 075e091  GBOARD MODE (Settings -> Preferences -> "Gboard mode", default ON):
                 - functional_keys_gboard.json (phone-style bottom row: ?123,
                   comma, space, period, enter/emoji) used on phone AND tablet,
                   so key placement is identical on both. Number row forced ON
