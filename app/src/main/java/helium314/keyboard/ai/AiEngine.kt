@@ -196,12 +196,15 @@ class AiEngine(private val context: Context) {
             onProcessingStateChanged?.invoke(false)
 
             if (result.success && result.text.isNotBlank()) {
-                // Delete text before cursor, then commit the AI result
+                // Sriboard v2.2: convert Markdown annotations (**, *, `, #, \n, links…)
+                // to plain text BEFORE committing, so the app never sees the markers.
+                val cleanText = MarkdownCleaner.clean(result.text)
+                // Delete text before cursor, then commit the cleaned result
                 val deleteCount = textBeforeCursor.length + (connection.getSelectedText(0)?.length ?: 0)
                 if (deleteCount > 0) {
                     connection.deleteSurroundingText(deleteCount, 0)
                 }
-                connection.commitText(result.text, 1)
+                connection.commitText(cleanText, 1)
 
                 performHaptic(CONFIRM_HAPTIC)
                 showToast("Done")

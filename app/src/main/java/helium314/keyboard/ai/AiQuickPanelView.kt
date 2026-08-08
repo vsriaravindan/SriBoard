@@ -35,6 +35,10 @@ class AiQuickPanelView @JvmOverloads constructor(
 
     var onChipClick: ((AiPrefs.PresetType) -> Unit)? = null
     var onPromptSubmit: ((String) -> Unit)? = null
+    /** Sriboard: asked when the user taps the prompt field — LatinIME makes the IME window focusable. */
+    var onPromptFocusRequested: (() -> Unit)? = null
+    /** Sriboard: asked when the prompt field loses focus — LatinIME restores the IME window flags. */
+    var onPromptFocusLost: (() -> Unit)? = null
 
     private val colors = Settings.getValues().mColors
     private val chipContainer: LinearLayout
@@ -84,7 +88,20 @@ class AiQuickPanelView @JvmOverloads constructor(
             // Sriboard: the IME's own keyboard types into the app's field via
             // InputConnection — this in-IME field needs its own focus tracking so
             // LatinIME can route our key events into it instead.
-            setOnFocusChangeListener { _, hasFocus -> promptFocused = hasFocus }
+            setOnFocusChangeListener { _, hasFocus ->
+                promptFocused = hasFocus
+                if (!hasFocus) onPromptFocusLost?.invoke()
+            }
+            // Sriboard: the IME window is NOT focusable by default, so tapping the
+            // field never actually gives it focus and typing would go to the app.
+            // Tell LatinIME to make the window focusable, then grab focus ourselves.
+            setOnTouchListener { _, event ->
+                if (event.actionMasked == android.view.MotionEvent.ACTION_UP && !promptEdit.hasFocus()) {
+                    onPromptFocusRequested?.invoke()
+                    promptEdit.requestFocus()
+                }
+                false
+            }
         }
         promptRow.addView(promptEdit, LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f))
         val sendButton = ImageButton(context).apply {

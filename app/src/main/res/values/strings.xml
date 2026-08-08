@@ -297,6 +297,8 @@
     <string name="language_and_layouts_title">Languages &amp; Layouts</string>
     <!-- Title of the setting to enable number row -->
     <string name="number_row">Number row</string>
+    <string name="gboard_mode">Gboard mode</string>
+    <string name="gboard_mode_summary">Match Gboard key placement on phone and tablet — phone-style bottom row everywhere, number row on tablets</string>
     <!-- Description of the settings to enable number row -->
     <string name="number_row_summary">Always show number row</string>
     <!-- Title of the setting to replace the top row in symbols layout with number row -->

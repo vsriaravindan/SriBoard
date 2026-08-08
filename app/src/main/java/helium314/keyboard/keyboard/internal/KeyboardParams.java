@@ -276,6 +276,6 @@ public class KeyboardParams {
             keyAttr.recycle();
             keyboardAttr.recycle();
         }
-        setTabletExtraKeys = Settings.getInstance().isTablet() && !mId.getSubtype().isCustom();
+        setTabletExtraKeys = Settings.getInstance().isTablet() && !Settings.getInstance().isGboardMode() && !mId.getSubtype().isCustom();
     }
 }

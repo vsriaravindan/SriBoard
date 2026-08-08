@@ -161,7 +161,8 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         mKeyboardLayoutSet = builder.setKeyboardGeometry(keyboardWidth, keyboardHeight)
                 .setSubtype(mRichImm.getCurrentSubtype())
                 .setVoiceInputKeyEnabled(settingsValues.mShowsVoiceInputKey)
-                .setNumberRowEnabled(settingsValues.mShowsNumberRow)
+                .setNumberRowEnabled(settingsValues.mShowsNumberRow
+                        || (Settings.getInstance().isGboardMode() && Settings.getInstance().isTablet()))
                 .setNumberRowInSymbolsEnabled(settingsValues.mShowsNumberRowInSymbols)
                 .setLanguageSwitchKeyEnabled(settingsValues.isLanguageSwitchKeyEnabled())
                 .setEmojiKeyEnabled(settingsValues.mShowsEmojiKey)
@@ -177,7 +178,8 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
                 final InputMethodSubtype defaults = SubtypeUtilsAdditional.INSTANCE.createDefaultSubtype(mRichImm.getCurrentSubtypeLocale());
                 mKeyboardLayoutSet = builder.setKeyboardGeometry(keyboardWidth, keyboardHeight)
                         .setSubtype(RichInputMethodSubtype.Companion.get(defaults))
-                        .setNumberRowEnabled(settingsValues.mShowsNumberRow)
+                        .setNumberRowEnabled(settingsValues.mShowsNumberRow
+                        || (Settings.getInstance().isGboardMode() && Settings.getInstance().isTablet()))
                         .setNumberRowInSymbolsEnabled(settingsValues.mShowsNumberRowInSymbols)
                         .setLanguageSwitchKeyEnabled(settingsValues.isLanguageSwitchKeyEnabled())
                         .setEmojiKeyEnabled(settingsValues.mShowsEmojiKey)

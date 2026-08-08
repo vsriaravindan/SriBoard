@@ -1,6 +1,7 @@
 ================================================================================
  SRIBOARD — FULL PROJECT HANDOFF (for future sessions)
  Written: 2026-07-31 | Status: v1.5 WORKING (v1.4 AI Fix confirmed by user)
+ Latest release: v2.2 (Gboard mode, current models, prompt typing fix, markdown clean)
 ================================================================================
 
 --------------------------------------------------------------------------------
@@ -290,6 +291,28 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 the field (confirm dialog first if text present). Every user
                 can now one-tap fill + import; no ADB needed. NEW USER FLOW:
                 install -> Bulk import -> Load example list -> OK.
+ v2.2 <fill>   GBOARD MODE (Settings -> Preferences -> "Gboard mode", default ON):
+                - functional_keys_gboard.json (phone-style bottom row: ?123,
+                  comma, space, period, enter/emoji) used on phone AND tablet,
+                  so key placement is identical on both. Number row forced ON
+                  on tablets. Tablet extra keys (! ?) disabled via
+                  KeyboardParams.setTabletExtraKeys. readDefaultLayoutName
+                  special-cases FUNCTIONAL in Gboard mode unless the user
+                  explicitly customized the layout.
+                MODELS UPDATED: defaults now gemini-3.5-flash / grok-4.20 /
+                deepseek-v4-flash / deepseek-v4-pro / gpt-5.6 (verified live Aug
+                2026). AiPrefs.getModel auto-migrates legacy saved defaults.
+                AI Settings model field has a quick-pick dropdown of current
+                models per provider (availableModels()).
+                PROMPT TYPING FIX: IME window made focusable while the Quick
+                Panel prompt field is focused — clear FLAG_NOT_FOCUSABLE + set
+                FLAG_ALT_FOCUSABLE_IM, restore on focus loss / panel close
+                (Gboard search-box technique). LESSON: InputMethodService
+                .getWindow() returns a Dialog — use getWindow().getWindow().
+                MARKDOWN CLEAN: new MarkdownCleaner.kt converts \n, **, *, `, #,
+                bullets, links, blockquotes to plain text BEFORE commitText, so
+                the app never sees the markers. IMEs cannot apply rich
+                formatting inside other apps — plain-text conversion is the max.
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)

@@ -27,6 +27,7 @@ import android.util.Printer;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InlineSuggestion;
@@ -149,6 +150,9 @@ public class LatinIME extends InputMethodService implements
     // Sriboard AI engine
     private AiEngine mAiEngine;
     private helium314.keyboard.ai.AiQuickPanelView mAiQuickPanel;
+    // Sriboard: while the Quick Panel prompt field has focus, the IME window is made
+    // focusable so the in-IME EditText can actually receive focus (and our keys).
+    private boolean mPromptWindowFocusable = false;
     // Working variable for {@link #startShowingInputView()} and
     // {@link #onEvaluateInputViewShown()}.
     private boolean mIsExecutingStartShowingInputView;
@@ -797,6 +801,35 @@ public class LatinIME extends InputMethodService implements
                 mAiEngine.runPrompt(prompt, getCurrentInputConnection());
             return Unit.INSTANCE;
         });
+        mAiQuickPanel.setOnPromptFocusRequested(() -> {
+            setPromptWindowFocusable(true);
+            return Unit.INSTANCE;
+        });
+        mAiQuickPanel.setOnPromptFocusLost(() -> {
+            setPromptWindowFocusable(false);
+            return Unit.INSTANCE;
+        });
+    }
+
+    // Sriboard: make the IME window focusable only while the Quick Panel prompt field
+    // is active. By default IME windows are NOT focusable, so an in-IME EditText can
+    // never receive focus and our keys would keep going to the app's field. This is
+    // the same technique Gboard uses for its in-IME search box. Always restore the
+    // flag when the panel closes, otherwise the app window would lose input focus.
+    private void setPromptWindowFocusable(boolean focusable) {
+        if (focusable == mPromptWindowFocusable) return;
+        mPromptWindowFocusable = focusable;
+        // InputMethodService.getWindow() returns the IME's Dialog; .getWindow()
+        // on it returns the actual Window (the classic IME window-flag pattern).
+        final Window window = getWindow().getWindow();
+        if (window == null) return;
+        if (focusable) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            window.addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+        } else {
+            window.addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+        }
     }
 
     // Sriboard: AI menu toolbar key toggles the Quick Panel
@@ -805,7 +838,10 @@ public class LatinIME extends InputMethodService implements
         final boolean visible = mAiQuickPanel.getVisibility() == View.VISIBLE;
         if (!visible) mAiQuickPanel.refreshChips();
         mAiQuickPanel.setVisibility(visible ? View.GONE : View.VISIBLE);
-        if (visible) mAiQuickPanel.clearPromptFocus();
+        if (visible) {
+            mAiQuickPanel.clearPromptFocus();
+            setPromptWindowFocusable(false);
+        }
     }
 
     public void updateSuggestionStripView(View view) {
@@ -839,6 +875,7 @@ public class LatinIME extends InputMethodService implements
         if (mAiQuickPanel != null) {
             mAiQuickPanel.setVisibility(View.GONE);
             mAiQuickPanel.clearPromptFocus();
+            setPromptWindowFocusable(false);
         }
         StatsUtils.onFinishInputView();
         mHandler.onFinishInputView(finishingInput);

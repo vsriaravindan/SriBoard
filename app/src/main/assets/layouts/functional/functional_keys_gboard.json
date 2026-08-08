@@ -1,0 +1,24 @@
+[
+  [
+    { "label": "shift", "width": 0.15 },
+    { "type": "placeholder" },
+    { "label": "delete", "width": 0.15 }
+  ],
+  [
+    { "$": "keyboard_state_selector",
+      "languageKeyEnabled": { "label": "language_switch", "width": 0.15 },
+      "default": { "label": "symbol_alpha", "width": 0.15 }
+    },
+    { "$": "variation_selector",
+      "default":  { "label": "comma", "labelFlags": 1073741824 },
+      "email":    { "label": "@", "labelFlags": 1073741824, "groupId": 1, "type": "function" },
+      "uri":      { "label": "/", "labelFlags": 1073741824, "groupId": 1, "type": "function" }
+    },
+    { "label": "space" },
+    { "label": "period", "labelFlags": 1073741824 },
+    { "$": "keyboard_state_selector",
+      "emojiKeyEnabled": { "label": "emoji", "width": 0.15 },
+      "default": { "label": "action", "width": 0.15, "labelFlags": 1073741824 }
+    }
+  ]
+]

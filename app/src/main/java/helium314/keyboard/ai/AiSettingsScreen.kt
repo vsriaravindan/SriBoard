@@ -159,13 +159,33 @@ fun AiSettingsScreen(onClickBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Model
+            // Model (free text + quick-pick of the provider's current models)
+            var modelMenu by remember { mutableStateOf(false) }
+            val availableModels = currentProvider.value.availableModels()
             OutlinedTextField(
                 value = model.value,
                 onValueChange = { model.value = it },
                 label = { Text(stringResource(R.string.ai_model)) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                trailingIcon = {
+                    if (availableModels.isNotEmpty()) {
+                        Box {
+                            TextButton(onClick = { modelMenu = true }) { Text("▾") }
+                            DropdownMenu(expanded = modelMenu, onDismissRequest = { modelMenu = false }) {
+                                availableModels.forEach { m ->
+                                    DropdownMenuItem(
+                                        text = { Text(m) },
+                                        onClick = {
+                                            model.value = m
+                                            modelMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             )
 
             // Endpoint (editable only for custom OpenAI-compatible)

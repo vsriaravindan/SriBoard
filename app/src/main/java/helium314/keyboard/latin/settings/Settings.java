@@ -161,6 +161,7 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     public static final String PREF_SHOW_NUMBER_ROW_IN_SYMBOLS = "show_number_row_in_symbols";
     public static final String PREF_LOCALIZED_NUMBER_ROW = "localized_number_row";
     public static final String PREF_SHOW_NUMBER_ROW_HINTS = "show_number_row_hints";
+    public static final String PREF_GBOARD_MODE = "gboard_mode";
     public static final String PREF_CUSTOM_CURRENCY_KEY = "custom_currency_key";
 
     public static final String PREF_SHOW_HINTS = "show_hints";
@@ -547,6 +548,11 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
         return mContext.getResources().getInteger(R.integer.config_screen_metrics) >= 3;
     }
 
+    /** Sriboard: Gboard mode — phone-style functional layout + number row on tablets. */
+    public boolean isGboardMode() {
+        return mPrefs.getBoolean(PREF_GBOARD_MODE, true);
+    }
+
     @SuppressLint("DiscouragedApi")
     public int getStringResIdByName(final String name) {
         return mContext.getResources().getIdentifier(name, "string", mContext.getPackageName());
@@ -578,6 +584,13 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
 
     // "default" layout as in this is used if nothing else is specified in the subtype
     public static String readDefaultLayoutName(final LayoutType type, final SharedPreferences prefs) {
+        // Sriboard v2.2: Gboard mode forces the phone-style functional layout unless
+        // the user explicitly customized it to something else.
+        if (type == LayoutType.FUNCTIONAL && Settings.getInstance().isGboardMode()) {
+            final String saved = prefs.getString(PREF_LAYOUT_PREFIX + type.name(), null);
+            if (saved == null || "functional_keys".equals(saved) || "functional_keys_tablet".equals(saved))
+                return "functional_keys_gboard";
+        }
         return prefs.getString(PREF_LAYOUT_PREFIX + type.name(), Defaults.INSTANCE.getDefault(type));
     }
 
