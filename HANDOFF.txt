@@ -313,6 +313,16 @@ Icons (real vector drawables, MUST exist or keyboard crashes at open):
                 bullets, links, blockquotes to plain text BEFORE commitText, so
                 the app never sees the markers. IMEs cannot apply rich
                 formatting inside other apps — plain-text conversion is the max.
+ v2.3 <fill>   LONG AI OUTPUT NEWLINES FIX: AiApiClient.extractJsonStringValue
+                was NOT decoding JSON escape sequences — "\n" in the API's JSON
+                arrived as a literal 'n' (backslash stripped, char kept), so
+                every newline in long answers pasted as "n" and blank lines as
+                "nn" (user report: "AI Studio.nnStep 1"). Fixed: proper JSON
+                unescaping (\n \t \r \b \f \" \\ \/ \uXXXX). MarkdownCleaner
+                then handles any genuinely-literal \n text from models as a
+                second layer. LESSON: the minimal JSON parser must decode
+                escapes, not just strip backslashes — verify with multi-line
+                model output, not short single-line fixes.
 
  How to release a new version:
    ./gradlew assembleRelease  (or with ABI flag for speed)

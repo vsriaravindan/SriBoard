@@ -319,13 +319,45 @@ object AiApiClient {
         val start = json.indexOf('"', colon)
         if (start == -1) return null
         val sb = StringBuilder()
-        var escaped = false
-        for (i in (start + 1) until json.length) {
+        var i = start + 1
+        while (i < json.length) {
             val c = json[i]
-            if (escaped) { sb.append(c); escaped = false; continue }
-            if (c == '\\') { escaped = true; continue }
             if (c == '"') break
-            sb.append(c)
+            if (c == '\\') {
+                // decode JSON escape sequences properly (v2.3: was appending the raw
+                // char after the backslash, so "\n" arrived as a literal 'n' and
+                // long AI outputs showed "nn" instead of blank lines)
+                i++
+                if (i >= json.length) break
+                when (val e = json[i]) {
+                    'n' -> sb.append('\n')
+                    't' -> sb.append('\t')
+                    'r' -> sb.append('\r')
+                    'b' -> sb.append('\b')
+                    'f' -> sb.append('\u000C')
+                    '"' -> sb.append('"')
+                    '\\' -> sb.append('\\')
+                    '/' -> sb.append('/')
+                    'u' -> {
+                        if (i + 4 < json.length) {
+                            val hex = json.substring(i + 1, i + 5)
+                            try {
+                                sb.append(hex.toInt(16).toChar())
+                                i += 4
+                            } catch (_: Exception) {
+                                sb.append('u')
+                            }
+                        } else {
+                            sb.append('u')
+                        }
+                    }
+                    else -> sb.append(e)
+                }
+                i++
+            } else {
+                sb.append(c)
+                i++
+            }
         }
         return sb.toString()
     }
