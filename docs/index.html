@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SriBoard — Privacy-First AI Keyboard</title>
+<meta name="description" content="Privacy-first Android keyboard forked from HeliBoard. Inline AI correction + translation via 5 providers. Works in any app without Accessibility Service. No INTERNET permission by default.">
+<style>
+  :root {
+    --green: #00ff41;
+    --green-dim: #00cc33;
+    --amber: #ffaa00;
+    --cyan: #00d9ff;
+    --bg: #0a0a0a;
+    --panel: #111111;
+    --border: #2a2a2a;
+    --text: #e8e8e8;
+    --text-dim: #b0b0b0;
+    --text-muted: #707070;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 255, 65, 0.02) 0,
+      rgba(0, 255, 65, 0.02) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+  body > * { position: relative; z-index: 2; }
+
+  /* Header */
+  header {
+    padding: 80px 24px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+    border-bottom: 1px dashed var(--border);
+  }
+  .prompt {
+    color: var(--green-dim);
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+  .prompt::before {
+    content: '$ ';
+    color: var(--green);
+  }
+  h1 {
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 700;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 16px;
+    text-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    margin-bottom: 32px;
+  }
+  .blink {
+    display: inline-block;
+    width: 10px;
+    height: 18px;
+    background: var(--green);
+    margin-left: 4px;
+    animation: blink 1.2s step-end infinite;
+    vertical-align: middle;
+  }
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 32px;
+  }
+  .cta {
+    display: inline-block;
+    padding: 14px 24px;
+    border: 1px solid var(--green);
+    background: transparent;
+    color: var(--green);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    font-size: 0.95rem;
+  }
+  .cta:hover {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 24px rgba(0, 255, 65, 0.5);
+  }
+  .cta-secondary {
+    border-color: var(--border);
+    color: var(--text-dim);
+  }
+  .cta-secondary:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: transparent;
+    box-shadow: 0 0 16px rgba(0, 217, 255, 0.4);
+  }
+
+  /* Terminal window panels */
+  section {
+    padding: 60px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    color: var(--green);
+    margin-bottom: 24px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .section-num {
+    color: var(--amber);
+    margin-right: 12px;
+  }
+
+  /* Provider grid */
+  .providers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .provider {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px;
+    transition: border-color 0.15s ease;
+  }
+  .provider:hover {
+    border-color: var(--green);
+  }
+  .provider-label {
+    color: var(--green-dim);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .provider-name {
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .provider-detail {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  /* Features as terminal logs */
+  .log-list {
+    margin-top: 24px;
+  }
+  .log-item {
+    background: var(--panel);
+    border-left: 3px solid var(--green);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .log-item.warn { border-left-color: var(--amber); }
+  .log-item.info { border-left-color: var(--cyan); }
+  .log-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  .log-item.warn .log-tag { color: var(--amber); }
+  .log-item.info .log-tag { color: var(--cyan); }
+  .log-text {
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .log-text strong {
+    color: var(--green);
+  }
+
+  /* Stack pills */
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .pill {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* Keyboard mockup */
+  .kb-mock {
+    margin: 32px auto 0;
+    max-width: 600px;
+    padding: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+  }
+  .kb-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+    justify-content: center;
+  }
+  .key {
+    min-width: 32px;
+    height: 36px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    border-radius: 4px;
+  }
+  .key.action {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  footer {
+    padding: 60px 24px 40px;
+    text-align: center;
+    border-top: 1px dashed var(--border);
+    margin-top: 60px;
+  }
+  footer .credit {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border: 1px solid var(--green);
+    color: var(--green);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+  }
+  footer .credit:hover {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 24px rgba(0, 255, 65, 0.5);
+  }
+  footer .credit-arrow {
+    transition: transform 0.15s ease;
+  }
+  footer .credit:hover .credit-arrow {
+    transform: translateX(4px);
+  }
+  footer .copy {
+    margin-top: 24px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 640px) {
+    header { padding: 60px 20px 40px; }
+    section { padding: 40px 20px; }
+    .providers { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="prompt">user@sriaravindan:~$ sriboard --describe</div>
+  <h1>SriBoard<span class="blink"></span></h1>
+  <p class="subtitle">
+    Privacy-first Android keyboard forked from HeliBoard. Inline AI
+    text correction + translation in any app. No Accessibility
+    Service. No INTERNET permission by default.
+  </p>
+  <div class="cta-row">
+    <a href="https://github.com/vsriaravindan/SriBoard/releases/download/v2.3/Sriboard-v2.3-release.apk" class="cta">
+      [DOWNLOAD] sriboard-v2.3.apk
+    </a>
+    <a href="https://github.com/vsriaravindan/SriBoard" class="cta cta-secondary">
+      [REPO] github.com/vsriaravindan/SriBoard
+    </a>
+  </div>
+</header>
+
+<section>
+  <h2><span class="section-num">01//</span>5 AI providers, you own the keys</h2>
+  <div class="providers">
+    <div class="provider">
+      <div class="provider-label">provider 1</div>
+      <div class="provider-name">Google Gemini</div>
+      <div class="provider-detail">gemini-2.0-flash</div>
+    </div>
+    <div class="provider">
+      <div class="provider-label">provider 2</div>
+      <div class="provider-name">xAI Grok</div>
+      <div class="provider-detail">grok-2</div>
+    </div>
+    <div class="provider">
+      <div class="provider-label">provider 3</div>
+      <div class="provider-name">DeepSeek Chat</div>
+      <div class="provider-detail">deepseek-chat</div>
+    </div>
+    <div class="provider">
+      <div class="provider-label">provider 4</div>
+      <div class="provider-name">DeepSeek Reasoner</div>
+      <div class="provider-detail">deepseek-reasoner</div>
+    </div>
+    <div class="provider">
+      <div class="provider-label">provider 5</div>
+      <div class="provider-name">OpenAI-compat</div>
+      <div class="provider-detail">any compatible endpoint</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="section-num">02//</span>Why this exists</h2>
+  <div class="log-list">
+    <div class="log-item">
+      <div class="log-tag">[OK] Privacy by default</div>
+      <div class="log-text">
+        The app&rsquo;s AndroidManifest declares <strong>NO INTERNET permission</strong>
+        by default. AI features only enable it when the user opts in. Your keystrokes
+        never leave the device unless you explicitly run an AI action.
+      </div>
+    </div>
+    <div class="log-item">
+      <div class="log-tag">[OK] Inline AI, no Accessibility Service</div>
+      <div class="log-text">
+        The AI toolbar integrates as a first-class keyboard action — works inside
+        <strong>any input field in any app</strong>. Other AI keyboards need Accessibility
+        Service (which can read your screen); SriBoard doesn&rsquo;t.
+      </div>
+    </div>
+    <div class="log-item warn">
+      <div class="log-tag">[USER OWNS API KEYS]</div>
+      <div class="log-text">
+        API keys live in your device storage. No SaaS subscription, no telemetry,
+        no data sent to a server. You pay providers directly. Delete the app = keys
+        gone.
+      </div>
+    </div>
+    <div class="log-item info">
+      <div class="log-tag">[FEATURES] v2.3 iterative shipping</div>
+      <div class="log-text">
+        Bulk dictionary import · Gboard layout mode · model quick-pick dropdown ·
+        markdown-to-plain-text pre-commit · 7 user-defined toolbar presets
+        (Fix, Translate, +5 custom).
+      </div>
+    </div>
+    <div class="log-item">
+      <div class="log-tag">[FOUNDATION] HeliBoard lineage</div>
+      <div class="log-text">
+        Forked from HeliBoard / OpenBoard AOSP. Inherits glide typing, split
+        keyboard, multilingual, clipboard history — plus the AI toolbar bolted
+        on as a keyboard action.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="section-num">03//</span>Try it</h2>
+  <div class="kb-mock" aria-label="Sample keyboard with AI action">
+    <div class="kb-row">
+      <div class="key">q</div><div class="key">w</div><div class="key">e</div><div class="key">r</div>
+      <div class="key">t</div><div class="key">y</div><div class="key">u</div><div class="key">i</div>
+      <div class="key">o</div><div class="key">p</div>
+    </div>
+    <div class="kb-row">
+      <div class="key">a</div><div class="key">s</div><div class="key">d</div><div class="key">f</div>
+      <div class="key">g</div><div class="key">h</div><div class="key">j</div><div class="key">k</div>
+      <div class="key">l</div>
+    </div>
+    <div class="kb-row">
+      <div class="key action">⇧</div>
+      <div class="key">z</div><div class="key">x</div><div class="key">c</div>
+      <div class="key">v</div><div class="key">b</div><div class="key">n</div><div class="key">m</div>
+      <div class="key action">⌫</div>
+    </div>
+    <div class="kb-row">
+      <div class="key action">123</div>
+      <div class="key action">space</div>
+      <div class="key action">AI ✦</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="section-num">04//</span>stack</h2>
+  <div class="stack">
+    <span class="pill">Kotlin</span>
+    <span class="pill">Android Views</span>
+    <span class="pill">KeyboardView</span>
+    <span class="pill">OkHttp</span>
+    <span class="pill">Gemini API</span>
+    <span class="pill">Grok API</span>
+    <span class="pill">DeepSeek API</span>
+    <span class="pill">Gradle</span>
+  </div>
+</section>
+
+<footer>
+  <a href="https://sriaravindan.com" class="credit">
+    Built by Sri Aravindan
+    <span class="credit-arrow">→</span>
+  </a>
+  <p class="copy">
+    Source available under the repo license. Sideload APK; verify SHA-256
+    against the GitHub release page.
+  </p>
+</footer>
+
+</body>
+</html>
